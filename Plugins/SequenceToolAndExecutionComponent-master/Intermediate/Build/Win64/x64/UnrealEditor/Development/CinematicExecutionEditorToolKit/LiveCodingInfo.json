@@ -1,0 +1,11 @@
+{
+	"RemapUnityFiles": 
+	{
+		"Module.CinematicExecutionEditorToolKit.gen.cpp.obj": [
+			"CinematicExecutionBlueprintEditorLibrary.gen.cpp.obj",
+			"CinematicExecutionEditorToolKit.init.gen.cpp.obj",
+			"ExecutedComponent.gen.cpp.obj",
+			"ExecutorComponent.gen.cpp.obj"
+		]
+	}
+}

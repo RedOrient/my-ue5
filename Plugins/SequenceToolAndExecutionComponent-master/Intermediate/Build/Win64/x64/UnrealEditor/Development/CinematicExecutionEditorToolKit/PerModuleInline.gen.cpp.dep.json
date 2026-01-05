@@ -1,0 +1,14 @@
+{
+    "Version": "1.2",
+    "Data": {
+        "Source": "e:\\pjw-r\\client\\plugins\\sequencetoolandexecutioncomponent-master\\intermediate\\build\\win64\\x64\\unrealeditor\\development\\cinematicexecutioneditortoolkit\\permoduleinline.gen.cpp",
+        "ProvidedModule": "",
+        "PCH": "e:\\pjw-r\\client\\intermediate\\build\\win64\\x64\\clienteditor\\development\\unrealed\\sharedpch.unrealed.project.valapi.valexpapi.cpp20.h.pch",
+        "Includes": [
+            "e:\\pjw-r\\client\\plugins\\sequencetoolandexecutioncomponent-master\\intermediate\\build\\win64\\x64\\unrealeditor\\development\\cinematicexecutioneditortoolkit\\definitions.cinematicexecutioneditortoolkit.h",
+            "e:\\pjw-r\\engine\\source\\runtime\\core\\public\\hal\\permoduleinline.inl"
+        ],
+        "ImportedModules": [],
+        "ImportedHeaderUnits": []
+    }
+}
