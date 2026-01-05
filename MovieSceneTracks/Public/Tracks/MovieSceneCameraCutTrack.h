@@ -63,16 +63,10 @@ public:
 #endif
 
 	/** @return Whether camera cut sections should automatically resize to fill gaps */
-	bool IsAutoManagingSections() const
-	{
-		return bAutoArrangeSections;
-	}
+	MOVIESCENETRACKS_API bool IsAutoManagingSections() const;
 
 	/** Sets whether camera cut sections should automatically resize to fill gaps */
-	void SetIsAutoManagingSections(bool bInAutoArrangeSections)
-	{
-		bAutoArrangeSections = bInAutoArrangeSections;
-	}
+	MOVIESCENETRACKS_API void SetIsAutoManagingSections(bool bInAutoArrangeSections);
 
 #if WITH_EDITOR
 	virtual EMovieSceneSectionMovedResult OnSectionMoved(UMovieSceneSection& Section, const FMovieSceneSectionMovedParams& Params) override;

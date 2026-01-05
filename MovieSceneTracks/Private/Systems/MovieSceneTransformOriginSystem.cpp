@@ -56,6 +56,8 @@ struct FGatherTransformOrigin
 				{
 					// Retrieve the current origin
 					FTransform TransformOrigin = RawInterface ? RawInterface->GetTransformOrigin() : IMovieSceneTransformOrigin::Execute_BP_GetTransformOrigin(InstanceData);
+					// Ignore scale. Sequencer does not apply scale, but the scale is factored into rotation, so assume always a scale of 1.
+					TransformOrigin.SetScale3D(FVector::OneVector);
 
 					TransformOriginsByInstanceID->Insert(Index, TransformOrigin);
 				}
@@ -337,9 +339,14 @@ void UMovieSceneTransformOriginSystem::OnSchedulePersistentTasks(UE::MovieScene:
 	.FilterNone({BuiltInComponents->Tags.ImportedEntity}) // filter out parent entities, otherwise we'd double-up in the InstanceHandleToParentHandle mapping.
 	.Iterate_PerEntity(&Linker->EntityManager,  [this, InstanceRegistry](FRootInstanceHandle RootInstance, FInstanceHandle Instance, FMovieSceneSequenceID SequenceID)
 	{
-		FInstanceHandle SubInstanceHandle = InstanceRegistry->GetInstance(RootInstance).FindSubInstance(SequenceID);
-		InstanceHandleToParentHandle.AddUnique(FInstanceToParentPair(SubInstanceHandle, Instance));
-		SequenceIDToInstanceHandle.Add(SequenceID, SubInstanceHandle);
+		const FInstanceHandle SubInstanceHandle = InstanceRegistry->GetInstance(RootInstance).FindSubInstance(SequenceID);
+		if (InstanceRegistry->IsHandleValid(SubInstanceHandle))
+		{
+			const FSubSequencePath SubSequencePath = InstanceRegistry->GetInstance(SubInstanceHandle).GetSubSequencePath();
+			const int32 Depth = SubSequencePath.NumGenerationsFromRoot(SequenceID);
+			InstanceHandleToParentHandle.AddUnique(FInstanceToParentPair(SubInstanceHandle, Instance, Depth));
+			SequenceIDToInstanceHandle.Add(SequenceID, SubInstanceHandle);
+		}
 		
 	});
 

@@ -21,6 +21,8 @@ public:
 	virtual bool SupportsType(TSubclassOf<UMovieSceneSection> SectionClass) const override;
 	virtual UMovieSceneSection* CreateNewSection() override;
 
+	virtual void InitializeFromProperty(const FProperty* Property, const UE::MovieScene::FPropertyDefinition* Definition) override;
+
 	/** @return Get the number of channels used by the vector */
 	int32 GetNumChannelsUsed() const { return NumChannelsUsed; }
 
@@ -45,6 +47,8 @@ public:
 	/** UMovieSceneTrack interface */
 	virtual bool SupportsType(TSubclassOf<UMovieSceneSection> SectionClass) const override;
 	virtual UMovieSceneSection* CreateNewSection() override;
+
+	virtual void InitializeFromProperty(const FProperty* Property, const UE::MovieScene::FPropertyDefinition* Definition) override;
 
 	/** @return Get the number of channels used by the vector */
 	int32 GetNumChannelsUsed() const { return NumChannelsUsed; }

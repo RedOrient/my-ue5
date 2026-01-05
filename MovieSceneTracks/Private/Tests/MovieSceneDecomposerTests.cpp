@@ -15,6 +15,8 @@
 #include "Tracks/MovieSceneFloatTrack.h"
 #include "Tracks/MovieSceneCinematicShotTrack.h"
 
+#include UE_INLINE_GENERATED_CPP_BY_NAME(MovieSceneDecomposerTests)
+
 #define LOCTEXT_NAMESPACE "MovieSceneDecomposerTests"
 
 namespace UE::MovieScene::Test

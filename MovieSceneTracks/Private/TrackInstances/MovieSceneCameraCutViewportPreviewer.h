@@ -32,7 +32,7 @@ namespace UE::MovieScene
 		TSharedPtr<FPreAnimatedCameraCutEditorStorage> PreAnimatedStorage;
 
 		/** Returns the target's location, rotation, and FOV */
-		void Get(FLevelEditorViewportClient* InClient, FVector& OutLocation, FRotator& OutRotation, float& OutFOV, const FPostProcessSettings*& OutPP, float& OutPPWeight) const;
+		void Get(FLevelEditorViewportClient* InClient, FVector& OutLocation, FRotator& OutRotation, float& OutFOV, FPostProcessSettings& OutPP, float& OutPPWeight) const;
 	};
 
 	/**

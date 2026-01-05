@@ -21,11 +21,11 @@ namespace MovieScene
 // Do we need to optimize for this case using something like the code below, while pessimizing the common (non-multi-bind) codepath??
 struct FEvaluateIntegerChannels
 {
-	static void ForEachEntity(FSourceIntegerChannel IntegerChannel, FFrameTime FrameTime, int32& OutResult)
+	static void ForEachEntity(FSourceIntegerChannel IntegerChannel, FFrameTime FrameTime, int64& OutResult)
 	{
 		if (!IntegerChannel.Source->Evaluate(FrameTime, OutResult))
 		{
-			OutResult = MIN_int32;
+			OutResult = MIN_int64;
 		}
 	}
 };

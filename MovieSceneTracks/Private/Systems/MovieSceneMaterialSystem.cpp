@@ -2,6 +2,8 @@
 
 #include "Systems/MovieSceneMaterialSystem.h"
 
+#include UE_INLINE_GENERATED_CPP_BY_NAME(MovieSceneMaterialSystem)
+
 namespace UE::MovieScene
 {
 

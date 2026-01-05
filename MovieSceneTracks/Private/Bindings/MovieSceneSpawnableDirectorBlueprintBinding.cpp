@@ -8,13 +8,22 @@
 #include "Engine/Level.h"
 #include "MovieSceneSequence.h"
 
+#include UE_INLINE_GENERATED_CPP_BY_NAME(MovieSceneSpawnableDirectorBlueprintBinding)
+
 #define LOCTEXT_NAMESPACE "MovieScene"
 
 UObject* UMovieSceneSpawnableDirectorBlueprintBinding::SpawnObjectInternal(UWorld* WorldContext, FName SpawnName, const FGuid& BindingId, int32 BindingIndex, UMovieScene& MovieScene, FMovieSceneSequenceIDRef TemplateID, TSharedRef<const UE::MovieScene::FSharedPlaybackState> SharedPlaybackState)
 {
 	FMovieSceneDynamicBindingResolveResult ResolveResult = FMovieSceneDynamicBindingInvoker::ResolveDynamicBinding(SharedPlaybackState, MovieScene.GetTypedOuter<UMovieSceneSequence>(), TemplateID, BindingId, DynamicBinding);
 
-	return ResolveResult.Object.Get();
+	for (TObjectPtr<UObject> Object : ResolveResult.Objects)
+	{
+		if (Object.Get())
+		{
+			return Object.Get();
+		}
+	}
+	return nullptr;
 }
 
 void UMovieSceneSpawnableDirectorBlueprintBinding::DestroySpawnedObjectInternal(UObject* Object)
@@ -73,10 +82,12 @@ FName UMovieSceneSpawnableDirectorBlueprintBinding::GetSpawnName(const FGuid& Bi
 
 #if WITH_EDITOR
 	UClass* ObjectClass = GetBoundObjectClass();
-	return MakeUniqueObjectName(WorldContext->PersistentLevel.Get(), ObjectClass ? ObjectClass : UObject::StaticClass(), *DesiredBindingName);
-#else
-	return *DesiredBindingName;
+	if (ensure(WorldContext != nullptr && WorldContext->PersistentLevel))
+	{
+		return MakeUniqueObjectName(WorldContext->PersistentLevel.Get(), ObjectClass ? ObjectClass : UObject::StaticClass(), *DesiredBindingName);
+	}
 #endif
+	return *DesiredBindingName;
 }
 
 bool UMovieSceneSpawnableDirectorBlueprintBinding::SupportsBindingCreationFromObject(const UObject* SourceObject) const
@@ -115,5 +126,28 @@ FText UMovieSceneSpawnableDirectorBlueprintBinding::GetBindingTrackIconTooltip()
 	return LOCTEXT("CustomSpawnableDirectorBlueprintTooltip", "This item is spawned by sequencer by a user-specified Director Blueprint endpoint.");
 }
 #endif
+
+void UMovieSceneSpawnableDirectorBlueprintBinding::PostDuplicate(EDuplicateMode::Type DuplicateMode)
+{
+	Super::PostDuplicate(DuplicateMode);
+
+	// If we were duplicated into a different package we can't reference the old function any more
+	//    For now we null it out, but it would be good to copy the endpoint as well (we currently can't do that
+	//    because there is no way to generically access the correct director BP class from UMovieSceneSequence
+	if (DynamicBinding.Function && GetTypedOuter<UMovieScene>() != nullptr)
+	{
+		UPackage* FunctionPackage = DynamicBinding.Function->GetPackage();
+		UPackage* Package = GetPackage();
+
+		if (Package != FunctionPackage)
+		{
+			DynamicBinding.Function = nullptr;
+			DynamicBinding.ResolveParamsProperty = nullptr;
+		#if WITH_EDITORONLY_DATA
+			DynamicBinding.WeakEndpoint = nullptr;
+		#endif
+		}
+	}
+}
 
 #undef LOCTEXT_NAMESPACE

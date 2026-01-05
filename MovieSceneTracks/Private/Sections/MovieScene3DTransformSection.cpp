@@ -155,6 +155,7 @@ struct F3DTransformChannelEditorData
 			MetaData[6].Color = AxisDisplayInfo::GetAxisColor(XAxis);
 			MetaData[6].SortOrder = SortOrderStart + ScaleOrderOffset + ReverseSwizzle[0];
 			MetaData[6].bCanCollapseToTrack = false;
+			MetaData[6].bCanPreserveRatio = true;
 			for (const FName& PropertyMetaDataKey : PropertyMetaDataKeys)
 			{
 				MetaData[6].PropertyMetaData.Add(PropertyMetaDataKey, RelativeScale3DProperty->GetMetaData(PropertyMetaDataKey));
@@ -166,6 +167,7 @@ struct F3DTransformChannelEditorData
 			MetaData[7].Color = AxisDisplayInfo::GetAxisColor(YAxis);
 			MetaData[7].SortOrder = SortOrderStart + ScaleOrderOffset + ReverseSwizzle[1];
 			MetaData[7].bCanCollapseToTrack = false;
+			MetaData[7].bCanPreserveRatio = true;
 			for (const FName& PropertyMetaDataKey : PropertyMetaDataKeys)
 			{
 				MetaData[7].PropertyMetaData.Add(PropertyMetaDataKey, RelativeScale3DProperty->GetMetaData(PropertyMetaDataKey));
@@ -177,6 +179,7 @@ struct F3DTransformChannelEditorData
 			MetaData[8].Color = AxisDisplayInfo::GetAxisColor(ZAxis);
 			MetaData[8].SortOrder = SortOrderStart + ScaleOrderOffset + ReverseSwizzle[2];
 			MetaData[8].bCanCollapseToTrack = false;
+			MetaData[8].bCanPreserveRatio = true;
 			for (const FName& PropertyMetaDataKey : PropertyMetaDataKeys)
 			{
 				MetaData[8].PropertyMetaData.Add(PropertyMetaDataKey, RelativeScale3DProperty->GetMetaData(PropertyMetaDataKey));
@@ -1194,7 +1197,6 @@ void UMovieScene3DTransformSection::AddConstraintChannel(UTickableConstraint* In
 		const int32 NewIndex = Constraints->ConstraintsChannels.Add(FConstraintAndActiveChannel(InConstraint));
 
 		FMovieSceneConstraintChannel* ExistingChannel = &Constraints->ConstraintsChannels[NewIndex].ActiveChannel;
-		ExistingChannel->SetDefault(false);
 
 		//make copy that we can spawn if it doesn't exist
 		//the rename changes the outer to this section (from any actor manager)

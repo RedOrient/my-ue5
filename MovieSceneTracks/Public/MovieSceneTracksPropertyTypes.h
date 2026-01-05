@@ -20,6 +20,7 @@ namespace MovieScene
 {
 
 struct FObjectComponent;
+struct FGeneratedTrackKeys;
 
 struct FVectorPropertyMetaData
 {
@@ -74,6 +75,7 @@ struct FFloatIntermediateVector
 		return FVector4d(X, Y, Z, W);
 	}
 };
+
 struct FDoubleIntermediateVector
 {
 	double X, Y, Z, W;
@@ -94,6 +96,7 @@ struct FDoubleIntermediateVector
 		: X(InX), Y(InY), Z(InZ), W(InW)
 	{}
 };
+
 
 /** Color type for the color property system */
 enum class EColorPropertyType : uint8
@@ -165,6 +168,8 @@ struct FIntermediateColor
 	}
 };
 
+
+
 /** Intermediate type used for applying partially animated transforms. Saves us from repteatedly recomposing quaternions from euler angles */
 struct FIntermediate3DTransform
 {
@@ -221,6 +226,10 @@ MOVIESCENETRACKS_API void SetComponentTransformAndVelocity(UObject* Object, cons
 
 MOVIESCENETRACKS_API void ConvertOperationalProperty(float In, double& Out);
 MOVIESCENETRACKS_API void ConvertOperationalProperty(double In, float& Out);
+
+MOVIESCENETRACKS_API void ConvertOperationalProperty(int64 In, int8&  Out);
+MOVIESCENETRACKS_API void ConvertOperationalProperty(int64 In, int16& Out);
+MOVIESCENETRACKS_API void ConvertOperationalProperty(int64 In, int32& Out);
 
 MOVIESCENETRACKS_API void ConvertOperationalProperty(const FIntermediate3DTransform& In, FEulerTransform& Out);
 MOVIESCENETRACKS_API void ConvertOperationalProperty(const FEulerTransform& In, FIntermediate3DTransform& Out);

@@ -17,6 +17,8 @@
 #include "UObject/Package.h"
 #include "Engine/Engine.h"
 
+#include UE_INLINE_GENERATED_CPP_BY_NAME(MovieScenePartialEvaluationTests)
+
 #if WITH_DEV_AUTOMATION_TESTS
 
 

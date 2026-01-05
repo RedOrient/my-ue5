@@ -17,6 +17,7 @@
 #include "Sections/MovieSceneSubSection.h"
 #include "Systems/FloatChannelEvaluatorSystem.h"
 #include "Systems/DoubleChannelEvaluatorSystem.h"
+#include "Templates/Greater.h"
 #include "IMovieScenePlayer.h"
 #include "MovieSceneSection.h"
 

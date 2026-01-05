@@ -21,6 +21,8 @@
 #include "Misc/Timecode.h"
 #endif
 
+#include UE_INLINE_GENERATED_CPP_BY_NAME(MovieSceneCommonAnimationTrack)
+
 
 UMovieSceneCommonAnimationTrack::UMovieSceneCommonAnimationTrack(const FObjectInitializer& ObjInit)
 	: Super(ObjInit)

@@ -60,24 +60,27 @@ public:
 	 * @param ParameterName The name of the parameter to add a key for.
 	 * @param Time The time to add the new key.
 	 * @param The value for the new key.
+	 * @param DefaultInterpolation The default interpolation to use for thew new key.
 	 */
-	void MOVIESCENETRACKS_API AddScalarParameterKey( FName ParameterName, FFrameNumber Position, float Value );
+	void MOVIESCENETRACKS_API AddScalarParameterKey( FName ParameterName, FFrameNumber Time, float Value, EMovieSceneKeyInterpolation DefaultInterpolation = EMovieSceneKeyInterpolation::Auto);
 
 	/**
 	* Adds a Vector parameter key to the track.
 	* @param ParameterName The name of the parameter to add a key for.
 	* @param Time The time to add the new key.
 	* @param The value for the new key.
+	* @param DefaultInterpolation The default interpolation to use for thew new key.
 	*/
-	void MOVIESCENETRACKS_API AddVectorParameterKey( FName ParameterName, FFrameNumber Position, FVector Value );
+	void MOVIESCENETRACKS_API AddVectorParameterKey( FName ParameterName, FFrameNumber Time, FVector Value, EMovieSceneKeyInterpolation DefaultInterpolation = EMovieSceneKeyInterpolation::Auto);
 
 	/**
-	* Adds a Vector parameter key to the track.
+	* Adds a color parameter key to the track.
 	* @param ParameterName The name of the parameter to add a key for.
 	* @param Time The time to add the new key.
 	* @param The value for the new key.
+	* @param DefaultInterpolation The default interpolation to use for thew new key.
 	*/
-	void MOVIESCENETRACKS_API AddColorParameterKey( FName ParameterName, FFrameNumber Position, FLinearColor Value );
+	void MOVIESCENETRACKS_API AddColorParameterKey( FName ParameterName, FFrameNumber Time, FLinearColor Value, EMovieSceneKeyInterpolation DefaultInterpolation = EMovieSceneKeyInterpolation::Auto);
 
 private:
 

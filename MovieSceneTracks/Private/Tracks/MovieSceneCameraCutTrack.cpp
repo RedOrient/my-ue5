@@ -51,6 +51,7 @@ UMovieSceneCameraCutSection* UMovieSceneCameraCutTrack::AddNewCameraCut(const FM
 	UMovieSceneCameraCutSection* NewSection = ExistingSection;
 	if (ExistingSection != nullptr)
 	{
+		ExistingSection->Modify();
 		ExistingSection->SetCameraBindingID(CameraBindingID);
 	}
 	else
@@ -95,7 +96,7 @@ UMovieSceneSection* UMovieSceneCameraCutTrack::CreateNewSection()
 
 bool UMovieSceneCameraCutTrack::SupportsMultipleRows() const
 {
-	return false;
+	return true;
 }
 
 EMovieSceneTrackEasingSupportFlags UMovieSceneCameraCutTrack::SupportsEasing(FMovieSceneSupportsEasingParams& Params) const
@@ -111,7 +112,7 @@ EMovieSceneTrackEasingSupportFlags UMovieSceneCameraCutTrack::SupportsEasing(FMo
 		{
 			return EMovieSceneTrackEasingSupportFlags::AutomaticEasing | EMovieSceneTrackEasingSupportFlags::ManualEasing;
 		}
-		else if (NumSections > 1 && bAutoArrangeSections)
+		else if (NumSections > 1 && IsAutoManagingSections())
 		{
 			// Find the section with the earliest start time, and the section with the latest end time.
 			int32 EdgeSections[2] = { 0, NumSections - 1 };
@@ -156,7 +157,7 @@ EMovieSceneTrackEasingSupportFlags UMovieSceneCameraCutTrack::SupportsEasing(FMo
 			}
 			return Flags;
 		}
-		else if (NumSections > 1 && !bAutoArrangeSections)
+		else if (NumSections > 1 && !IsAutoManagingSections())
 		{
 			// The given section supports manual easing on one side only if it doesn't overlap with any other section
 			// on that side.
@@ -278,9 +279,19 @@ void UMovieSceneCameraCutTrack::PreCompileImpl(FMovieSceneTrackPreCompileResult&
 	}
 }
 
+bool UMovieSceneCameraCutTrack::IsAutoManagingSections() const
+{
+	return bAutoArrangeSections && GetMaxRowIndex() == 0;
+}
+
+void UMovieSceneCameraCutTrack::SetIsAutoManagingSections(bool bInAutoArrangeSections)
+{
+	bAutoArrangeSections = bInAutoArrangeSections;
+}
+
 bool UMovieSceneCameraCutTrack::AutoArrangeSectionsIfNeeded(UMovieSceneSection& ChangedSection, bool bWasDeletion, bool bCleanUp)
 {
-	if (bAutoArrangeSections)
+	if (IsAutoManagingSections())
 	{
 		if (bCanBlend)
 		{
@@ -306,7 +317,7 @@ void UMovieSceneCameraCutTrack::RearrangeAllSections()
 	MovieSceneHelpers::SortConsecutiveSections(MutableView(Sections));
 
 	// Go over the sections and change anything we don't want to support.
-	const bool bRemoveGaps = bAutoArrangeSections;
+	const bool bRemoveGaps = IsAutoManagingSections();
 	const bool bRemoveOverlaps = !bCanBlend;
 	const bool bRemoveEasings = !bCanBlend;
 

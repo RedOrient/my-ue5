@@ -12,6 +12,8 @@
 #include "MovieSceneCommonHelpers.h"
 #include "Bindings/MovieSceneSpawnableActorBinding.h"
 
+#include UE_INLINE_GENERATED_CPP_BY_NAME(MovieSceneReplaceableActorBinding)
+
 #define LOCTEXT_NAMESPACE "MovieScene"
 
 

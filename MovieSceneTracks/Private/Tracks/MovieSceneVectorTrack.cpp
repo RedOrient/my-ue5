@@ -26,6 +26,30 @@ UMovieSceneSection* UMovieSceneFloatVectorTrack::CreateNewSection()
 	return NewSection;
 }
 
+void UMovieSceneFloatVectorTrack::InitializeFromProperty(const FProperty* Property, const UE::MovieScene::FPropertyDefinition* Definition)
+{
+	const FStructProperty* StructProp = CastField<const FStructProperty>(Property);
+
+	FName StructName = StructProp ? StructProp->Struct->GetFName() : NAME_None;
+
+	if (StructName == NAME_Vector2f)
+	{
+		SetNumChannelsUsed(2);
+	}
+	else if (StructName == NAME_Vector3f)
+	{
+		SetNumChannelsUsed(3);
+	}
+	else if (StructName == NAME_Vector4f)
+	{
+		SetNumChannelsUsed(4);
+	}
+	else
+	{
+		ensureAlwaysMsgf(false, TEXT("Attempting to create a vector track with an unsupported property type"));
+	}
+}
+
 
 UMovieSceneDoubleVectorTrack::UMovieSceneDoubleVectorTrack( const FObjectInitializer& ObjectInitializer )
 	: Super( ObjectInitializer )
@@ -47,3 +71,26 @@ UMovieSceneSection* UMovieSceneDoubleVectorTrack::CreateNewSection()
 	return NewSection;
 }
 
+void UMovieSceneDoubleVectorTrack::InitializeFromProperty(const FProperty* Property, const UE::MovieScene::FPropertyDefinition* Definition)
+{
+	const FStructProperty* StructProp = CastField<const FStructProperty>(Property);
+
+	FName StructName = StructProp ? StructProp->Struct->GetFName() : NAME_None;
+	
+	if (StructName == NAME_Vector2D)
+	{
+		SetNumChannelsUsed(2);
+	}
+	else if (StructName == NAME_Vector3d || StructName == NAME_Vector)
+	{
+		SetNumChannelsUsed(3);
+	}	
+	else if (StructName == NAME_Vector4d || StructName == NAME_Vector4)
+	{
+		SetNumChannelsUsed(4);
+	}
+	else
+	{
+		ensureAlwaysMsgf(false, TEXT("Attempting to create a vector track with an unsupported property type"));
+	}
+}

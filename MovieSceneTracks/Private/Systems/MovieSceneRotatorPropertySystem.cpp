@@ -6,6 +6,8 @@
 #include "Systems/DoubleChannelEvaluatorSystem.h"
 #include "Systems/MovieScenePiecewiseDoubleBlenderSystem.h"
 
+#include UE_INLINE_GENERATED_CPP_BY_NAME(MovieSceneRotatorPropertySystem)
+
 UMovieSceneRotatorPropertySystem::UMovieSceneRotatorPropertySystem(const FObjectInitializer& InObjectInitializer)
 	: Super(InObjectInitializer)
 {

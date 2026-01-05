@@ -50,6 +50,8 @@ protected:
 	FText GetBindingTrackIconTooltip() const override;
 #endif
 
+	/** UObject overrides */
+	MOVIESCENETRACKS_API virtual void PostDuplicate(EDuplicateMode::Type DuplicateMode) override;
 
 private:
 	/* MovieSceneSpawnableBindingBase overrides*/

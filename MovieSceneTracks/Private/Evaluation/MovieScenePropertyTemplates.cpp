@@ -26,6 +26,11 @@ namespace
 	}
 }
 
+namespace UE::MovieScene
+{
+	MOVIESCENETRACKS_API extern bool GBooleanPropertyLegacyTemplate;
+}
+
 //	----------------------------------------------------------------------------
 //	Boolean Property Template
 FMovieSceneBoolPropertySectionTemplate::FMovieSceneBoolPropertySectionTemplate(const UMovieSceneBoolSection& Section, const UMovieScenePropertyTrack& Track)
@@ -37,6 +42,11 @@ FMovieSceneBoolPropertySectionTemplate::FMovieSceneBoolPropertySectionTemplate(c
 
 void FMovieSceneBoolPropertySectionTemplate::Evaluate(const FMovieSceneEvaluationOperand& Operand, const FMovieSceneContext& Context, const FPersistentEvaluationData& PersistentData, FMovieSceneExecutionTokens& ExecutionTokens) const
 {
+	if (!UE::MovieScene::GBooleanPropertyLegacyTemplate)
+	{
+		return;
+	}
+
 	// Only evaluate if the curve has any data
 	bool Result = false;
 	if (BoolCurve.Evaluate(Context.GetTime(), Result))

@@ -8,7 +8,7 @@
 #include "EntitySystem/BuiltInComponentTypes.h"
 #include "MovieSceneTracksComponentTypes.h"
 #include "Sections/MovieSceneCustomPrimitiveDataSection.h"
-#include "MaterialTypes.h"
+#include "Materials/MaterialParameters.h"
 #include "Materials/MaterialInterface.h"
 #include "Components/PrimitiveComponent.h"
 #include "Components/MeshComponent.h"
@@ -128,12 +128,12 @@ const TArray<UMovieSceneSection*>& UMovieSceneCustomPrimitiveDataTrack::GetAllSe
 }
 
 
-void UMovieSceneCustomPrimitiveDataTrack::AddScalarParameterKey(uint8 CustomPrimitiveDataStartIndex, FFrameNumber Time, float Value)
+void UMovieSceneCustomPrimitiveDataTrack::AddScalarParameterKey(uint8 CustomPrimitiveDataStartIndex, FFrameNumber Time, float Value, EMovieSceneKeyInterpolation DefaultInterpolation)
 {
-	AddScalarParameterKey(CustomPrimitiveDataStartIndex, Time, INDEX_NONE, Value);
+	AddScalarParameterKey(CustomPrimitiveDataStartIndex, Time, INDEX_NONE, Value, DefaultInterpolation);
 }
 
-void UMovieSceneCustomPrimitiveDataTrack::AddScalarParameterKey(uint8 CustomPrimitiveDataStartIndex, FFrameNumber Time, int32 RowIndex, float Value)
+void UMovieSceneCustomPrimitiveDataTrack::AddScalarParameterKey(uint8 CustomPrimitiveDataStartIndex, FFrameNumber Time, int32 RowIndex, float Value, EMovieSceneKeyInterpolation DefaultInterpolation)
 {
 	UMovieSceneSection* NearestSection = SectionToKey;
 	if (NearestSection == nullptr || (RowIndex != INDEX_NONE && NearestSection->GetRowIndex() != RowIndex))
@@ -154,17 +154,17 @@ void UMovieSceneCustomPrimitiveDataTrack::AddScalarParameterKey(uint8 CustomPrim
 	{
 		if (UMovieSceneCustomPrimitiveDataSection* NearestCustomPrimitiveDataSection = Cast<UMovieSceneCustomPrimitiveDataSection>(NearestSection))
 		{
-			NearestCustomPrimitiveDataSection->AddScalarParameterKey(*FString::FromInt(CustomPrimitiveDataStartIndex), Time, Value);
+			NearestCustomPrimitiveDataSection->AddScalarParameterKey(*FString::FromInt(CustomPrimitiveDataStartIndex), Time, Value, DefaultInterpolation);
 		}
 	}
 }
 
-void UMovieSceneCustomPrimitiveDataTrack::AddVector2DParameterKey(uint8 CustomPrimitiveDataStartIndex, FFrameNumber Time, FVector2D Value)
+void UMovieSceneCustomPrimitiveDataTrack::AddVector2DParameterKey(uint8 CustomPrimitiveDataStartIndex, FFrameNumber Time, FVector2D Value, EMovieSceneKeyInterpolation DefaultInterpolation)
 {
-	AddVector2DParameterKey(CustomPrimitiveDataStartIndex, Time, INDEX_NONE, Value);
+	AddVector2DParameterKey(CustomPrimitiveDataStartIndex, Time, INDEX_NONE, Value, DefaultInterpolation);
 }
 
-void UMovieSceneCustomPrimitiveDataTrack::AddVector2DParameterKey(uint8 CustomPrimitiveDataStartIndex, FFrameNumber Time, int32 RowIndex, FVector2D Value)
+void UMovieSceneCustomPrimitiveDataTrack::AddVector2DParameterKey(uint8 CustomPrimitiveDataStartIndex, FFrameNumber Time, int32 RowIndex, FVector2D Value, EMovieSceneKeyInterpolation DefaultInterpolation)
 {
 	UMovieSceneSection* NearestSection = SectionToKey;
 	if (NearestSection == nullptr || (RowIndex != INDEX_NONE && NearestSection->GetRowIndex() != RowIndex))
@@ -185,17 +185,17 @@ void UMovieSceneCustomPrimitiveDataTrack::AddVector2DParameterKey(uint8 CustomPr
 	{
 		if (UMovieSceneCustomPrimitiveDataSection* NearestCustomPrimitiveDataSection = Cast<UMovieSceneCustomPrimitiveDataSection>(NearestSection))
 		{
-			NearestCustomPrimitiveDataSection->AddVector2DParameterKey(*FString::FromInt(CustomPrimitiveDataStartIndex), Time, Value);
+			NearestCustomPrimitiveDataSection->AddVector2DParameterKey(*FString::FromInt(CustomPrimitiveDataStartIndex), Time, Value, DefaultInterpolation);
 		}
 	}
 }
 
-void UMovieSceneCustomPrimitiveDataTrack::AddVectorParameterKey(uint8 CustomPrimitiveDataStartIndex, FFrameNumber Time, FVector Value)
+void UMovieSceneCustomPrimitiveDataTrack::AddVectorParameterKey(uint8 CustomPrimitiveDataStartIndex, FFrameNumber Time, FVector Value, EMovieSceneKeyInterpolation DefaultInterpolation)
 {
-	AddVectorParameterKey(CustomPrimitiveDataStartIndex, Time, INDEX_NONE, Value);
+	AddVectorParameterKey(CustomPrimitiveDataStartIndex, Time, INDEX_NONE, Value, DefaultInterpolation);
 }
 
-void UMovieSceneCustomPrimitiveDataTrack::AddVectorParameterKey(uint8 CustomPrimitiveDataStartIndex, FFrameNumber Time, int32 RowIndex, FVector Value)
+void UMovieSceneCustomPrimitiveDataTrack::AddVectorParameterKey(uint8 CustomPrimitiveDataStartIndex, FFrameNumber Time, int32 RowIndex, FVector Value, EMovieSceneKeyInterpolation DefaultInterpolation)
 {
 	UMovieSceneSection* NearestSection = SectionToKey;
 	if (NearestSection == nullptr || (RowIndex != INDEX_NONE && NearestSection->GetRowIndex() != RowIndex))
@@ -216,17 +216,17 @@ void UMovieSceneCustomPrimitiveDataTrack::AddVectorParameterKey(uint8 CustomPrim
 	{
 		if (UMovieSceneCustomPrimitiveDataSection* NearestCustomPrimitiveDataSection = Cast<UMovieSceneCustomPrimitiveDataSection>(NearestSection))
 		{
-			NearestCustomPrimitiveDataSection->AddVectorParameterKey(*FString::FromInt(CustomPrimitiveDataStartIndex), Time, Value);
+			NearestCustomPrimitiveDataSection->AddVectorParameterKey(*FString::FromInt(CustomPrimitiveDataStartIndex), Time, Value, DefaultInterpolation);
 		}
 	}
 }
 
-void UMovieSceneCustomPrimitiveDataTrack::AddColorParameterKey(uint8 CustomPrimitiveDataStartIndex, FFrameNumber Time, FLinearColor Value)
+void UMovieSceneCustomPrimitiveDataTrack::AddColorParameterKey(uint8 CustomPrimitiveDataStartIndex, FFrameNumber Time, FLinearColor Value, EMovieSceneKeyInterpolation DefaultInterpolation)
 {
-	AddColorParameterKey(CustomPrimitiveDataStartIndex, Time, INDEX_NONE, Value);
+	AddColorParameterKey(CustomPrimitiveDataStartIndex, Time, INDEX_NONE, Value, DefaultInterpolation);
 }
 
-void UMovieSceneCustomPrimitiveDataTrack::AddColorParameterKey(uint8 CustomPrimitiveDataStartIndex, FFrameNumber Time, int32 RowIndex, FLinearColor Value)
+void UMovieSceneCustomPrimitiveDataTrack::AddColorParameterKey(uint8 CustomPrimitiveDataStartIndex, FFrameNumber Time, int32 RowIndex, FLinearColor Value, EMovieSceneKeyInterpolation DefaultInterpolation)
 {
 	UMovieSceneSection* NearestSection = SectionToKey;
 	if (NearestSection == nullptr || (RowIndex != INDEX_NONE && NearestSection->GetRowIndex() != RowIndex))
@@ -247,7 +247,7 @@ void UMovieSceneCustomPrimitiveDataTrack::AddColorParameterKey(uint8 CustomPrimi
 	{
 		if (UMovieSceneCustomPrimitiveDataSection* NearestCustomPrimitiveDataSection = Cast<UMovieSceneCustomPrimitiveDataSection>(NearestSection))
 		{
-			NearestCustomPrimitiveDataSection->AddColorParameterKey(*FString::FromInt(CustomPrimitiveDataStartIndex), Time, Value);
+			NearestCustomPrimitiveDataSection->AddColorParameterKey(*FString::FromInt(CustomPrimitiveDataStartIndex), Time, Value, DefaultInterpolation);
 		}
 	}
 }

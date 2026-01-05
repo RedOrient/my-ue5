@@ -2,6 +2,8 @@
 
 #include "Tests/MovieSceneTestDataBuilders.h"
 
+#include UE_INLINE_GENERATED_CPP_BY_NAME(MovieSceneTestDataBuilders)
+
 void UMovieSceneTestSequence::Initialize()
 {
 	MovieScene = NewObject<UMovieScene>(this);

@@ -16,6 +16,11 @@
 #include "UObject/ObjectMacros.h"
 #include "MovieScenePropertyTrack.generated.h"
 
+namespace UE::MovieScene
+{
+	struct FPropertyDefinition;
+}
+
 /**
  * Base class for tracks that animate an object property
  */
@@ -36,12 +41,14 @@ public:
 	MOVIESCENETRACKS_API virtual void RemoveSectionAt(int32 SectionIndex) override;
 	MOVIESCENETRACKS_API virtual bool IsEmpty() const override;
 	MOVIESCENETRACKS_API virtual const TArray<UMovieSceneSection*>& GetAllSections() const override;
+	virtual void InitializeFromProperty(const FProperty* Property, const UE::MovieScene::FPropertyDefinition* Definition)
+	{
+	}
 
 #if WITH_EDITORONLY_DATA
 	MOVIESCENETRACKS_API virtual FText GetDefaultDisplayName() const override;
 	MOVIESCENETRACKS_API virtual FText GetDisplayNameToolTipText(const FMovieSceneLabelParams& LabelParams) const override;
 	MOVIESCENETRACKS_API virtual FSlateColor GetLabelColor(const FMovieSceneLabelParams& LabelParams) const override;
-	virtual bool CanRename() const override { return false; }
 #endif
 	MOVIESCENETRACKS_API virtual FName GetTrackName() const override;
 
@@ -201,6 +208,7 @@ struct TPropertyTrackEntityImportHelperImpl
 	void Commit(const UMovieSceneSection* InSection, const UE::MovieScene::FEntityImportParams& Params, UE::MovieScene::FImportedEntity* OutImportedEntity)
 	{
 		const FGuid ObjectBindingID = Params.GetObjectBindingID();
+		const FMovieSceneEvaluationFieldEntityMetaData* MetaData = Params.EntityMetaData;
 		const FBuiltInComponentTypes* BuiltInComponents = FBuiltInComponentTypes::Get();
 		const FMovieSceneTracksComponentTypes* TracksComponents = FMovieSceneTracksComponentTypes::Get();
 
@@ -208,10 +216,13 @@ struct TPropertyTrackEntityImportHelperImpl
 		{
 			if (FMovieScenePropertyTrackEntityImportHelper::IsPropertyValueID(Params))
 			{
+				const FName NotifyFunctionName = (MetaData ? MetaData->NotifyFunctionName : NAME_None);
+
 				OutImportedEntity->AddBuilder(
 					Builder
 					.Add(BuiltInComponents->PropertyBinding, PropertyTrack->GetPropertyBinding())
-					.AddConditional(BuiltInComponents->GenericObjectBinding, ObjectBindingID, ObjectBindingID.IsValid()));
+					.AddConditional(BuiltInComponents->GenericObjectBinding, ObjectBindingID, ObjectBindingID.IsValid())
+					.AddConditional(TracksComponents->PropertyNotify, FPropertyNotifyComponentData{ NotifyFunctionName }, !NotifyFunctionName.IsNone()));
 			}
 			else if (ensure(FMovieScenePropertyTrackEntityImportHelper::IsEditConditionToggleID(Params)))
 			{
@@ -326,6 +337,7 @@ struct TPropertyTrackWithOverridableChannelsEntityImportHelperImpl
 	void Commit(const UMovieSceneSection* InSection, const UE::MovieScene::FEntityImportParams& Params, UE::MovieScene::FImportedEntity* OutImportedEntity)
 	{
 		const FGuid ObjectBindingID = Params.GetObjectBindingID();
+		const FMovieSceneEvaluationFieldEntityMetaData* MetaData = Params.EntityMetaData;
 		const FBuiltInComponentTypes* BuiltInComponents = FBuiltInComponentTypes::Get();
 		const FMovieSceneTracksComponentTypes* TracksComponents = FMovieSceneTracksComponentTypes::Get();
 
@@ -333,10 +345,13 @@ struct TPropertyTrackWithOverridableChannelsEntityImportHelperImpl
 		{
 			if (FMovieScenePropertyTrackEntityImportHelper::IsPropertyValueID(Params))
 			{
+				const FName NotifyFunctionName = (MetaData ? MetaData->NotifyFunctionName : NAME_None);
+
 				OutImportedEntity->AddBuilder(
 					Builder
 					.Add(BuiltInComponents->PropertyBinding, PropertyTrack->GetPropertyBinding())
-					.AddConditional(BuiltInComponents->GenericObjectBinding, ObjectBindingID, ObjectBindingID.IsValid()));
+					.AddConditional(BuiltInComponents->GenericObjectBinding, ObjectBindingID, ObjectBindingID.IsValid())
+					.AddConditional(TracksComponents->PropertyNotify, FPropertyNotifyComponentData{ NotifyFunctionName }, !NotifyFunctionName.IsNone()));
 			}
 			else if (FMovieScenePropertyTrackEntityImportHelper::IsEditConditionToggleID(Params))
 			{

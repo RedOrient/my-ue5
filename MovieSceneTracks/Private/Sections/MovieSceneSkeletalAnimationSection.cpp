@@ -53,7 +53,7 @@ FMovieSceneSkeletalAnimationParams::FMovieSceneSkeletalAnimationParams()
 	bLinearPlaybackWhenScaled = false;
 }
 
-FMovieSceneSequenceTransform FMovieSceneSkeletalAnimationParams::MakeTransform(const FFrameRate& OuterFrameRate, const TRange<FFrameNumber>& OuterRange, UAnimSequenceBase* OverrideSequence) const
+FMovieSceneSequenceTransform FMovieSceneSkeletalAnimationParams::MakeTransform(const FFrameRate& OuterFrameRate, const TRange<FFrameNumber>& OuterRange, UAnimSequenceBase* OverrideSequence, bool bClampToOuterRange, bool bForceLoop) const
 {
 	if (!OverrideSequence)
 	{
@@ -69,7 +69,7 @@ FMovieSceneSequenceTransform FMovieSceneSkeletalAnimationParams::MakeTransform(c
 	const FFrameTime AnimationLength = SequenceLength * OuterFrameRate;
 	const int32 LengthInFrames = AnimationLength.FrameNumber.Value + (int)(AnimationLength.GetSubFrame() + 0.5f) + 1;
 
-	const bool bLooping = (UE::MovieScene::DiscreteSize(OuterRange) + StartFrameOffset + EndFrameOffset) > LengthInFrames;
+	const bool bLooping = bForceLoop || ((UE::MovieScene::DiscreteSize(OuterRange) + FirstLoopStartFrameOffset + StartFrameOffset + EndFrameOffset) > LengthInFrames);
 
 	FMovieSceneSectionTimingParametersSeconds TimingParams = {
 		PlayRate.ShallowCopy(),
@@ -78,7 +78,8 @@ FMovieSceneSequenceTransform FMovieSceneSkeletalAnimationParams::MakeTransform(c
 		FirstLoopStartFrameOffset / OuterFrameRate,
 		bLooping,
 		!bLooping,
-		bReverse
+		bReverse,
+		bClampToOuterRange
 	};
 
 	return TimingParams.MakeTransform(OuterFrameRate, OuterRange, SequenceLength, OverrideSequence->RateScale);
@@ -835,18 +836,21 @@ bool UMovieSceneSkeletalAnimationSection::GetRootMotionTransform(FAnimationPoseD
 	return true;
 }
 
+//this is actually multiply out on previous clips, let's refactor with new anim mixer
 void UMovieSceneSkeletalAnimationSection::MultiplyOutInverseOnNextClips(FVector PreviousMatchedLocationOffset, FRotator PreviousMatchedRotationOffset)
 {
 	UMovieSceneCommonAnimationTrack* Track = GetTypedOuter<UMovieSceneCommonAnimationTrack>();
 	if (Track)
 	{
+		
 		bool bMultiplyOutInverse = false;
 		//calculate the diff here....
 		FTransform Previous(PreviousMatchedRotationOffset.Quaternion(), PreviousMatchedLocationOffset);
 		FTransform Matched(MatchedRotationOffset.Quaternion(), MatchedLocationOffset);
 		FTransform Inverse = Previous.GetRelativeTransformReverse(Matched);
-		for (UMovieSceneSection* Section : Track->AnimationSections)
-		{
+		for(int32 Index = Track->AnimationSections.Num() - 1; Index >=0; -- Index)
+		{ 
+			UMovieSceneSection* Section  = Track->AnimationSections[Index];
 			if (bMultiplyOutInverse)
 			{
 				UMovieSceneSkeletalAnimationSection* AnimSection = Cast<UMovieSceneSkeletalAnimationSection>(Section);

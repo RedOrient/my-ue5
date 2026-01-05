@@ -37,9 +37,9 @@ namespace UE::MovieScene
 		virtual ~FCameraShakePreviewerLinkerExtension();
 
 		/** Find the previewer for the given sequence instance, if it has already been created */
-		FCameraShakePreviewer* FindPreviewer(FInstanceHandle InstanceHandle);
+		TSharedPtr<FCameraShakePreviewer> FindPreviewer(FInstanceHandle InstanceHandle);
 		/** Get or create the previewer for the given sequence instance */
-		FCameraShakePreviewer& GetPreviewer(FInstanceHandle InstanceHandle);
+		TSharedRef<FCameraShakePreviewer> GetPreviewer(FInstanceHandle InstanceHandle);
 		/** Update all previewers by using the update context of each matching sequence instance */
 		void UpdateAllPreviewers();
 		/** Whether there is any previewer with any shake */
@@ -49,7 +49,7 @@ namespace UE::MovieScene
 		void OnLevelViewportClientListChanged();
 
 	private:
-		TMap<FInstanceHandle, FCameraShakePreviewer> Previewers;
+		TMap<FInstanceHandle, TSharedRef<FCameraShakePreviewer>> Previewers;
 	};
 #endif
 }

@@ -2,6 +2,7 @@
 
 #include "Systems/MovieSceneBoolPropertySystem.h"
 #include "Systems/MovieScenePiecewiseBoolBlenderSystem.h"
+#include "Systems/BoolChannelEvaluatorSystem.h"
 #include "MovieSceneTracksComponentTypes.h"
 
 #include UE_INLINE_GENERATED_CPP_BY_NAME(MovieSceneBoolPropertySystem)
@@ -13,6 +14,7 @@ UMovieSceneBoolPropertySystem::UMovieSceneBoolPropertySystem(const FObjectInitia
 
 	if (HasAnyFlags(RF_ClassDefaultObject))
 	{
+		DefineImplicitPrerequisite(UBoolChannelEvaluatorSystem::StaticClass(), GetClass());
 		DefineImplicitPrerequisite(UMovieScenePiecewiseBoolBlenderSystem::StaticClass(), GetClass());
 
 		DefineComponentConsumer(GetClass(), UE::MovieScene::FMovieSceneTracksComponentTypes::Get()->Bool.PropertyTag);

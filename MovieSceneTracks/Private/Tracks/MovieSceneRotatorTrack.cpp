@@ -5,6 +5,8 @@
 #include "Evaluation/Blending/MovieSceneBlendType.h"
 #include "Sections/MovieSceneRotatorSection.h"
 
+#include UE_INLINE_GENERATED_CPP_BY_NAME(MovieSceneRotatorTrack)
+
 UMovieSceneRotatorTrack::UMovieSceneRotatorTrack(const FObjectInitializer& InObjectInitializer)
 	: Super(InObjectInitializer)
 {

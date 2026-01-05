@@ -7,15 +7,17 @@
 
 #include "MovieSceneTracksSettings.generated.h"
 
+#define UE_API MOVIESCENETRACKS_API
+
 /** Options for some of the Sequencer systems in this module. */
-UCLASS(config=EditorPerProjectUserSettings, PerObjectConfig)
-class MOVIESCENETRACKS_API UMovieSceneTracksSettings : public UObject
+UCLASS(MinimalAPI, config=EditorPerProjectUserSettings, PerObjectConfig)
+class UMovieSceneTracksSettings : public UObject
 {
 	GENERATED_BODY()
 
 public:
 
-	UMovieSceneTracksSettings(const FObjectInitializer& ObjectInitializer);
+	UE_API UMovieSceneTracksSettings(const FObjectInitializer& ObjectInitializer);
 
 	/**
 	 * Gets whether camera cut tracks should take control of the viewport in SIE, or PIE while ejected from the player controller.
@@ -25,7 +27,7 @@ public:
 	/**
 	 * Sets whether camera cut tracks should take control of the viewport in SIE, or PIE while ejected from the player controller.
 	 */
-	void SetPreviewCameraCutsInSimulate(bool bInPreviewCameraCutsInSimulate);
+	UE_API void SetPreviewCameraCutsInSimulate(bool bInPreviewCameraCutsInSimulate);
 
 protected:
 
@@ -37,3 +39,4 @@ protected:
 	bool bPreviewCameraCutsInSimulate;
 };
 
+#undef UE_API

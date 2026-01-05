@@ -13,6 +13,8 @@
 #include "EdGraphSchema_K2.h"
 #endif
 
+#include UE_INLINE_GENERATED_CPP_BY_NAME(MovieSceneDirectorBlueprintCondition)
+
 bool FMovieSceneDirectorBlueprintConditionInvoker::EvaluateDirectorBlueprintCondition(FGuid BindingGuid, FMovieSceneSequenceID SequenceID, TSharedRef<const UE::MovieScene::FSharedPlaybackState> SharedPlaybackState, const FMovieSceneDirectorBlueprintConditionData& DirectorBlueprintConditionData)
 {
 	using namespace UE::MovieScene;

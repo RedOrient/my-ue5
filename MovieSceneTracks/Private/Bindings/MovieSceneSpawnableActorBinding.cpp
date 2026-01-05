@@ -21,11 +21,62 @@
 #include "TransformData.h"
 #include "MovieSceneBindingReferences.h"
 #include "MovieSceneCommonHelpers.h"
+#include "Serialization/ArchiveReplaceOrClearExternalReferences.h"
 #include "Systems/MovieSceneDeferredComponentMovementSystem.h"
+
+#include UE_INLINE_GENERATED_CPP_BY_NAME(MovieSceneSpawnableActorBinding)
 
 static const FName SequencerActorTag(TEXT("SequencerActor"));
 static const FName SequencerPreviewActorTag(TEXT("SequencerPreviewActor"));
 #define LOCTEXT_NAMESPACE "MovieScene"
+
+namespace UE::MovieSceneTracks
+{
+class FArchiveClearExternalReferences : public FArchiveReplaceOrClearExternalReferences<UObject>
+{
+	using Super = FArchiveReplaceOrClearExternalReferences<UObject>;
+
+	TArray<UObject*> RemovedObjects;
+public:
+	
+	FArchiveClearExternalReferences(UObject* InSearchObject, const TMap<UObject*, UObject*>& InReplacementMap, UPackage* InDestPackage)
+		: Super(InSearchObject, InReplacementMap, InDestPackage, EArchiveReplaceObjectFlags::NullPrivateRefs | EArchiveReplaceObjectFlags::DelayStart )
+	{
+		SerializeSearchObject();
+	}
+
+	const TArray<UObject*>& GetRemovedObjects() const { return RemovedObjects; }
+
+	virtual FArchive& operator<<(UObject*& Obj) override
+	{
+		UObject* Original = Obj;
+		Super::operator<<(Obj);
+
+		if (Original && !Obj)
+		{
+			RemovedObjects.AddUnique(Original);
+		}
+		
+		return *this;
+	}
+};
+
+static void LogRemovedExternalObjects(UObject* ReferencingObject, const TArray<UObject*>& InRemovedObjects)
+{
+	if (InRemovedObjects.IsEmpty())
+	{
+		return;
+	}
+
+	const FString List = FString::JoinBy(InRemovedObjects, TEXT(", "), [](UObject* Object)
+	{
+		return ensure(Object) ? Object->GetPathName() : TEXT("null");
+	});
+	UE_LOG(LogMovieScene, Warning, TEXT("While saving %s, the following references were cleared because they were private and external: %s"),
+		*ReferencingObject->GetPathName(), *List
+		);
+}
+}
 
 UObject* UMovieSceneSpawnableActorBindingBase::SpawnObjectInternal(UWorld* WorldContext, FName SpawnName, const FGuid& BindingId, int32 BindingIndex, UMovieScene& MovieScene, FMovieSceneSequenceIDRef TemplateID, TSharedRef<const UE::MovieScene::FSharedPlaybackState> SharedPlaybackState)
 {
@@ -92,9 +143,6 @@ UObject* UMovieSceneSpawnableActorBindingBase::SpawnObjectInternal(UWorld* World
 
 	if (ActorTemplate)
 	{
-		//Chaos - Avoiding crash in UWorld::SendAllEndOfFrameUpdates due to duplicating template components/re-runing the construction script on a fully formed hierarchy
-		ActorTemplate->DestroyConstructedComponents();
-
 		// Disable all particle components so that they don't auto fire as soon as the actor is spawned. The particles should be triggered through the particle track.
 		for (UActorComponent* Component : ActorTemplate->GetComponents())
 		{
@@ -265,7 +313,7 @@ FName UMovieSceneSpawnableActorBindingBase::GetSpawnName(const FGuid& BindingId,
 	// We use the net addressable name for spawnable actors on any non-editor, non-standalone world (ie, all clients, servers and PIE worlds)
 
 	UWorld* WorldContext = GetWorldContext(SharedPlaybackState);
-	const bool bUseNetAddressableName = bNetAddressableName && (WorldContext->WorldType != EWorldType::Editor) && (WorldContext->GetNetMode() != ENetMode::NM_Standalone);
+	const bool bUseNetAddressableName = bNetAddressableName && WorldContext && (WorldContext->WorldType != EWorldType::Editor) && (WorldContext->GetNetMode() != ENetMode::NM_Standalone);
 	FString DesiredBindingName = GetDesiredBindingName();
 	if (FMovieScenePossessable* Possessable = MovieScene.FindPossessable(BindingId))
 	{
@@ -276,8 +324,14 @@ FName UMovieSceneSpawnableActorBindingBase::GetSpawnName(const FGuid& BindingId,
 
 #if WITH_EDITOR
 		UClass* ActorClass = GetActorClass();
-		return bUseNetAddressableName ? GetNetAddressableName(SharedPlaybackState, BindingId, TemplateID, DesiredBindingName)
-			: MakeUniqueObjectName(WorldContext->PersistentLevel, ActorClass ? ActorClass : AActor::StaticClass(), *DesiredBindingName);
+		if (bUseNetAddressableName)
+		{
+			return GetNetAddressableName(SharedPlaybackState, BindingId, TemplateID, DesiredBindingName);
+		}
+		else if (ensure(WorldContext != nullptr && WorldContext->PersistentLevel))
+		{
+			return MakeUniqueObjectName(WorldContext->PersistentLevel, ActorClass ? ActorClass : AActor::StaticClass(), *DesiredBindingName);
+		}
 #else
 		return bUseNetAddressableName ? GetNetAddressableName(SharedPlaybackState, BindingId, TemplateID, DesiredBindingName) : NAME_None;
 #endif
@@ -472,6 +526,17 @@ UMovieSceneCustomBinding* UMovieSceneSpawnableActorBinding::CreateNewCustomBindi
 			{
 				Actor->ClearFlags(RF_Transactional);
 			}
+
+			// This achieves that the template actor keeps no reference to any external private objects.
+			// Such references would cause a crash when saving the owning UMovieScene / sequence.
+			// Example: An actor that has a reference to another actor in the level.
+			// SpawnedActor keep referencing the actor in the original map, which is a private external object.
+			// FArchiveReplaceOrClearExternalReferences handles recursively serializing subobjects, such as components.
+			UPackage* NewPackage = SpawnedActor->GetOutermost();
+			const UE::MovieSceneTracks::FArchiveClearExternalReferences ReplaceActorInvalidReferences(SpawnedActor, {}, NewPackage);
+			// User should be warned in case they notice weird behaviour (e.g. if the spawnable actor is selected in details panel,
+			// saving nulls out the references which the user may notice).
+			UE::MovieSceneTracks::LogRemovedExternalObjects(this, ReplaceActorInvalidReferences.GetRemovedObjects());
 		}
 	}
 	// If it's a blueprint, we need some special handling
@@ -543,5 +608,28 @@ FText UMovieSceneSpawnableActorBinding::GetBindingTypePrettyName() const
 	return LOCTEXT("MovieSceneSpawnableActorBinding", "Spawnable Actor");
 }
 #endif
+
+void UMovieSceneSpawnableActorBinding::PostDuplicate(EDuplicateMode::Type DuplicateMode)
+{
+	Super::PostDuplicate(DuplicateMode);
+
+	// Post duplication, the Actor Template will still be pointing to the original Sequence.
+	// We therefore need to rebuild the object template
+	if (ActorTemplate != nullptr)
+	{
+		// Only duplicate the inner ActorTemplate if this binding has been bound into a different valid UMovieScene.
+		if (UMovieScene* OuterMovieScene = GetTypedOuter<UMovieScene>(); 
+			OuterMovieScene != nullptr && ActorTemplate->GetTypedOuter<UMovieScene>() != OuterMovieScene)
+		{
+			// Reparent the actor template to the duplicated movie scene
+			ActorTemplate = Cast<AActor>(StaticDuplicateObject(ActorTemplate, OuterMovieScene));
+			if (ActorTemplate)
+			{
+				FMovieSceneSpawnable::MarkSpawnableTemplate(*ActorTemplate);
+			}
+			AutoSetNetAddressableName();
+		}
+	}
+}
 
 #undef LOCTEXT_NAMESPACE

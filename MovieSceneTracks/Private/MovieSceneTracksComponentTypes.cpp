@@ -5,19 +5,29 @@
 #include "Camera/CameraShakeSourceComponent.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "MovieSceneTracksCustomAccessors.h"
+#include "Tracks/MovieSceneIntegerTrack.h"
+#include "Tracks/MovieSceneFloatTrack.h"
+#include "Tracks/MovieSceneDoubleTrack.h"
+#include "Tracks/MovieSceneColorTrack.h"
+#include "Tracks/MovieSceneVectorTrack.h"
+#include "Tracks/MovieSceneTransformTrack.h"
+#include "Tracks/MovieSceneEulerTransformTrack.h"
+#include "Tracks/MovieSceneBoolTrack.h"
 #include "EntitySystem/BuiltInComponentTypes.h"
 #include "EntitySystem/MovieSceneEntityManager.h"
 #include "EntitySystem/MovieSceneEntitySystemLinker.h"
 #include "EntitySystem/MovieSceneComponentRegistry.h"
 #include "EntitySystem/MovieSceneBlenderSystem.h"
+#include "Channels/MovieSceneUnpackedChannelValues.h"
 #include "Systems/MovieScenePiecewiseBoolBlenderSystem.h"
 #include "Systems/MovieScenePiecewiseByteBlenderSystem.h"
 #include "Systems/MovieScenePiecewiseIntegerBlenderSystem.h"
 #include "Systems/MovieScenePiecewiseDoubleBlenderSystem.h"
 #include "Systems/MovieScenePiecewiseDoubleBlenderSystem.h"
 #include "EntitySystem/MovieScenePropertyComponentHandler.h"
+#include "EntitySystem/MovieSceneVariantPropertyComponentHandler.h"
 #include "EntitySystem/MovieSceneEntityFactoryTemplates.h"
-#include "EntitySystem/MovieScenePropertyMetaDataTraits.inl"
+#include "EntitySystem/MovieScenePropertyMetaData.inl"
 #include "PreAnimatedState/MovieScenePreAnimatedComponentTransformStorage.h"
 #include "Systems/MovieSceneColorPropertySystem.h"
 #include "Systems/MovieSceneVectorPropertySystem.h"
@@ -26,6 +36,7 @@
 #include "Materials/MaterialParameterCollection.h"
 #include "Misc/App.h"
 #include "PhysicsEngine/BodyInstance.h"
+#include "EntitySystem/MovieSceneComponentTypeIDs.h"
 
 #include UE_INLINE_GENERATED_CPP_BY_NAME(MovieSceneTracksComponentTypes)
 
@@ -33,6 +44,60 @@ namespace UE
 {
 namespace MovieScene
 {
+/* ---------------------------------------------------------------------------
+ * Integer conversion functions
+ * ---------------------------------------------------------------------------*/
+void ConvertOperationalProperty(int64 In, int8&  Out)
+{
+	static constexpr int8 Min = std::numeric_limits<int8>::lowest();
+	static constexpr int8 Max = std::numeric_limits<int8>::max();
+	if (In > static_cast<int64>(Max))
+	{
+		Out = Max;
+	}
+	else if (In < static_cast<int64>(Min))
+	{
+		Out = Min;
+	}
+	else
+	{
+		Out = static_cast<int8>(In);
+	}
+}
+void ConvertOperationalProperty(int64 In, int16& Out)
+{
+	static constexpr int16 Min = std::numeric_limits<int16>::lowest();
+	static constexpr int16 Max = std::numeric_limits<int16>::max();
+	if (In > static_cast<int64>(Max))
+	{
+		Out = Max;
+	}
+	else if (In < static_cast<int64>(Min))
+	{
+		Out = Min;
+	}
+	else
+	{
+		Out = static_cast<int16>(In);
+	}
+}
+void ConvertOperationalProperty(int64 In, int32& Out)
+{
+	static constexpr int32 Min = std::numeric_limits<int32>::lowest();
+	static constexpr int32 Max = std::numeric_limits<int32>::max();
+	if (In > static_cast<int64>(Max))
+	{
+		Out = Max;
+	}
+	else if (In < static_cast<int64>(Min))
+	{
+		Out = Min;
+	}
+	else
+	{
+		Out = static_cast<int32>(In);
+	}
+}
 
 /* ---------------------------------------------------------------------------
  * Transform conversion functions
@@ -326,49 +391,6 @@ struct FFloatHandler : TPropertyComponentHandler<FFloatPropertyTraits, double>
 {
 };
 
-struct FColorHandler : TPropertyComponentHandler<FColorPropertyTraits, double, double, double, double>
-{
-	virtual void DispatchInitializePropertyMetaDataTasks(const FPropertyDefinition& Definition, FSystemTaskPrerequisites& InPrerequisites, FSystemSubsequentTasks& Subsequents, UMovieSceneEntitySystemLinker* Linker) override
-	{
-		FBuiltInComponentTypes* BuiltInComponents = FBuiltInComponentTypes::Get();
-		FMovieSceneTracksComponentTypes* TrackComponents = FMovieSceneTracksComponentTypes::Get();
-
-		FEntityTaskBuilder()
-		.Read(BuiltInComponents->BoundObject)
-		.Read(BuiltInComponents->PropertyBinding)
-		.Write(TrackComponents->Color.MetaDataComponents.GetType<0>())
-		.FilterAll({ BuiltInComponents->Tags.NeedsLink })
-		.Iterate_PerEntity(&Linker->EntityManager, [](UObject* Object, const FMovieScenePropertyBinding& Binding, EColorPropertyType& OutType)
-		{
-			FTrackInstancePropertyBindings Bindings(Binding.PropertyName, Binding.PropertyPath.ToString());
-			const UStruct* PropertyStruct = Bindings.GetPropertyStruct(*Object);
-			if (ensure(PropertyStruct))
-			{
-				if (PropertyStruct == TBaseStructure<FColor>::Get())
-				{
-					// We assume the color we get back is in sRGB, assigning it to a linear color will implicitly
-					// convert it to a linear color instead of using ReinterpretAsLinear which will just change the
-					// bytes into floats using divide by 255.
-					OutType = EColorPropertyType::Color;
-				}
-				else if (PropertyStruct == TBaseStructure<FSlateColor>::Get())
-				{
-					OutType = EColorPropertyType::Slate;
-				}
-				else
-				{
-					ensure(PropertyStruct == TBaseStructure<FLinearColor>::Get());
-					OutType = EColorPropertyType::Linear;
-				}
-			}
-			else
-			{
-				OutType = EColorPropertyType::Linear;
-			}
-		});
-	}
-};
-
 struct FFloatParameterHandler : TPropertyComponentHandler<FFloatParameterTraits, double>
 {
 	virtual TSharedPtr<IInitialValueProcessor> MakeInitialValueProcessor(const FPropertyDefinition& Definition) override
@@ -382,88 +404,6 @@ struct FColorParameterHandler : TPropertyComponentHandler<FColorParameterTraits,
 	virtual TSharedPtr<IInitialValueProcessor> MakeInitialValueProcessor(const FPropertyDefinition& Definition) override
 	{
 		return nullptr;
-	}
-};
-
-
-struct FFloatVectorHandler : TPropertyComponentHandler<FFloatVectorPropertyTraits, double, double, double, double>
-{
-	virtual void DispatchInitializePropertyMetaDataTasks(const FPropertyDefinition& Definition, FSystemTaskPrerequisites& InPrerequisites, FSystemSubsequentTasks& Subsequents, UMovieSceneEntitySystemLinker* Linker) override
-	{
-		FBuiltInComponentTypes* BuiltInComponents = FBuiltInComponentTypes::Get();
-		FMovieSceneTracksComponentTypes* TrackComponents = FMovieSceneTracksComponentTypes::Get();
-
-		FEntityTaskBuilder()
-		.Read(BuiltInComponents->BoundObject)
-		.Read(BuiltInComponents->PropertyBinding)
-		.Write(TrackComponents->FloatVector.MetaDataComponents.GetType<0>())
-		.FilterAll({ BuiltInComponents->Tags.NeedsLink })
-		.Iterate_PerEntity(&Linker->EntityManager, [](UObject* Object, const FMovieScenePropertyBinding& Binding, FVectorPropertyMetaData& OutMetaData)
-		{
-			FTrackInstancePropertyBindings Bindings(Binding.PropertyName, Binding.PropertyPath.ToString());
-			const UStruct* PropertyStruct = Bindings.GetPropertyStruct(*Object);
-			if (ensure(PropertyStruct))
-			{
-				if (PropertyStruct == TVariantStructure<FVector2f>::Get())
-				{
-					OutMetaData.NumChannels = 2;
-				}
-				else if (PropertyStruct == TVariantStructure<FVector3f>::Get())
-				{
-					OutMetaData.NumChannels = 3;
-				}
-				else
-				{
-					ensure(PropertyStruct == TVariantStructure<FVector4f>::Get());
-					OutMetaData.NumChannels = 4;
-				}
-			}
-			else
-			{
-				OutMetaData.NumChannels = 4;
-			}
-		});
-	}
-};
-
-
-struct FDoubleVectorHandler : TPropertyComponentHandler<FDoubleVectorPropertyTraits, double, double, double, double>
-{
-	virtual void DispatchInitializePropertyMetaDataTasks(const FPropertyDefinition& Definition, FSystemTaskPrerequisites& InPrerequisites, FSystemSubsequentTasks& Subsequents, UMovieSceneEntitySystemLinker* Linker) override
-	{
-		FBuiltInComponentTypes* BuiltInComponents = FBuiltInComponentTypes::Get();
-		FMovieSceneTracksComponentTypes* TrackComponents = FMovieSceneTracksComponentTypes::Get();
-
-		FEntityTaskBuilder()
-		.Read(BuiltInComponents->BoundObject)
-		.Read(BuiltInComponents->PropertyBinding)
-		.Write(TrackComponents->DoubleVector.MetaDataComponents.GetType<0>())
-		.FilterAll({ BuiltInComponents->Tags.NeedsLink })
-		.Iterate_PerEntity(&Linker->EntityManager, [](UObject* Object, const FMovieScenePropertyBinding& Binding, FVectorPropertyMetaData& OutMetaData)
-		{
-			FTrackInstancePropertyBindings Bindings(Binding.PropertyName, Binding.PropertyPath.ToString());
-			const UStruct* PropertyStruct = Bindings.GetPropertyStruct(*Object);
-			if (ensure(PropertyStruct))
-			{
-				if (PropertyStruct == TBaseStructure<FVector2D>::Get())
-				{
-					OutMetaData.NumChannels = 2;
-				}
-				else if (PropertyStruct == TBaseStructure<FVector>::Get() || PropertyStruct == TVariantStructure<FVector3d>::Get())
-				{
-					OutMetaData.NumChannels = 3;
-				}
-				else
-				{
-					ensure(PropertyStruct == TBaseStructure<FVector4>::Get() || PropertyStruct == TVariantStructure<FVector4d>::Get());
-					OutMetaData.NumChannels = 4;
-				}
-			}
-			else
-			{
-				OutMetaData.NumChannels = 4;
-			}
-		});
 	}
 };
 
@@ -504,6 +444,10 @@ struct FComponentTransformHandler : TPropertyComponentHandler<FComponentTransfor
 	TSharedPtr<IPreAnimatedStorage> GetPreAnimatedStateStorage(const FPropertyDefinition& Definition, FPreAnimatedStateExtension* Container) override
 	{
 		return Container->GetOrCreateStorage<FPreAnimatedComponentTransformStorage>();
+	}
+	virtual void ScheduleSetterTasks(const FPropertyDefinition& Definition, TArrayView<const FPropertyCompositeDefinition> Composites, const FPropertyStats& Stats, IEntitySystemScheduler* TaskScheduler, UMovieSceneEntitySystemLinker* Linker) override
+	{
+		ScheduleSetterTasksImpl(Definition, Composites, Stats, TaskScheduler, Linker, FEntityComponentFilter().None({ FMovieSceneTracksComponentTypes::Get()->Tags.AnimMixerPoseProducer }));
 	}
 };
 
@@ -546,6 +490,7 @@ struct FObjectHandler : TPropertyComponentHandler<FObjectPropertyTraits, FObject
 
 FMovieSceneTracksComponentTypes::FMovieSceneTracksComponentTypes()
 {
+	FBuiltInComponentTypes* BuiltInComponents = FBuiltInComponentTypes::Get();
 	FComponentRegistry* ComponentRegistry = UMovieSceneEntitySystemLinker::GetComponents();
 
 	ComponentRegistry->NewPropertyType(Bool, TEXT("bool"));
@@ -558,6 +503,7 @@ FMovieSceneTracksComponentTypes::FMovieSceneTracksComponentTypes()
 	ComponentRegistry->NewPropertyType(FloatVector, TEXT("float vector"));
 	ComponentRegistry->NewPropertyType(DoubleVector, TEXT("double vector"));
 	ComponentRegistry->NewPropertyType(String, TEXT("FString"));
+	ComponentRegistry->NewPropertyType(Text, TEXT("FText"));
 	ComponentRegistry->NewPropertyType(Object, TEXT("Object"));
 
 	ComponentRegistry->NewPropertyType(Transform, TEXT("FTransform"));
@@ -578,10 +524,14 @@ FMovieSceneTracksComponentTypes::FMovieSceneTracksComponentTypes()
 	ComponentRegistry->NewPropertyType(Parameters.Color, TEXT("Color parameter"));
 	ComponentRegistry->NewPropertyType(Parameters.Transform, TEXT("Transform parameter"));
 
+	Color.MetaDataComponents.Initialize(BuiltInComponents->VariantPropertyTypeIndex);
+	Double.MetaDataComponents.Initialize(BuiltInComponents->VariantPropertyTypeIndex);
+	Integer.MetaDataComponents.Initialize(BuiltInComponents->VariantPropertyTypeIndex);
+	Transform.MetaDataComponents.Initialize(BuiltInComponents->VariantPropertyTypeIndex);
+	FloatVector.MetaDataComponents.Initialize(BuiltInComponents->VariantPropertyTypeIndex);
+	DoubleVector.MetaDataComponents.Initialize(BuiltInComponents->VariantPropertyTypeIndex);
+
 	Bool.MetaDataComponents.Initialize(ComponentRegistry, TEXT("Bool Bitfield"));
-	Color.MetaDataComponents.Initialize(ComponentRegistry, TEXT("Color Type"));
-	FloatVector.MetaDataComponents.Initialize(ComponentRegistry, TEXT("Num Float Vector Channels"));
-	DoubleVector.MetaDataComponents.Initialize(ComponentRegistry, TEXT("Num Double Vector Channels"));
 	Object.MetaDataComponents.Initialize(ComponentRegistry, TEXT("Object Class"));
 
 	ComponentRegistry->NewComponentType(&QuaternionRotationChannel[0], TEXT("Quaternion Rotation Channel 0"));
@@ -623,6 +573,8 @@ FMovieSceneTracksComponentTypes::FMovieSceneTracksComponentTypes()
 
 	ComponentRegistry->NewComponentType(&Fade,                   TEXT("Fade"), EComponentTypeFlags::CopyToChildren);
 
+	ComponentRegistry->NewComponentType(&PropertyNotify,         TEXT("PropertyNotify"), EComponentTypeFlags::CopyToChildren);
+
 	ComponentRegistry->NewComponentType(&Audio,                  TEXT("Audio"), EComponentTypeFlags::CopyToChildren);
 	ComponentRegistry->NewComponentType(&AudioInputs,            TEXT("Audio Inputs"), EComponentTypeFlags::CopyToChildren);
 	ComponentRegistry->NewComponentType(&AudioTriggerName,       TEXT("Audio Trigger Name"), EComponentTypeFlags::CopyToChildren);
@@ -645,19 +597,18 @@ FMovieSceneTracksComponentTypes::FMovieSceneTracksComponentTypes()
 
 	Tags.AnimMixerPoseProducer = ComponentRegistry->NewTag(TEXT("Anim Mixer Pose Producer"));
 
-	FBuiltInComponentTypes* BuiltInComponents = FBuiltInComponentTypes::Get();
-
 	// --------------------------------------------------------------------------------------------
 	// Set up bool properties
 	BuiltInComponents->PropertyRegistry.DefineProperty(Bool, TEXT("Apply bool Properties"))
 	.AddSoleChannel(BuiltInComponents->BoolResult)
 	.SetBlenderSystem<UMovieScenePiecewiseBoolBlenderSystem>()
+	.SetDefaultTrackType(UMovieSceneBoolTrack::StaticClass())
 	.SetCustomAccessors(&Accessors.Bool)
 	.Commit(FBoolHandler());
 
 	// --------------------------------------------------------------------------------------------
 	// Set up FTransform properties
-	BuiltInComponents->PropertyRegistry.DefineCompositeProperty(Transform, TEXT("Apply FTransform Properties"))
+	BuiltInComponents->PropertyRegistry.DefineCompositeProperty(Transform, TEXT("Apply Transform Properties"))
 	.AddComposite(BuiltInComponents->DoubleResult[0], &FIntermediate3DTransform::T_X)
 	.AddComposite(BuiltInComponents->DoubleResult[1], &FIntermediate3DTransform::T_Y)
 	.AddComposite(BuiltInComponents->DoubleResult[2], &FIntermediate3DTransform::T_Z)
@@ -667,6 +618,8 @@ FMovieSceneTracksComponentTypes::FMovieSceneTracksComponentTypes()
 	.AddComposite(BuiltInComponents->DoubleResult[6], &FIntermediate3DTransform::S_X)
 	.AddComposite(BuiltInComponents->DoubleResult[7], &FIntermediate3DTransform::S_Y)
 	.AddComposite(BuiltInComponents->DoubleResult[8], &FIntermediate3DTransform::S_Z)
+	.SetCustomAccessors(&Accessors.Transform)
+	.SetDefaultTrackType(UMovieSceneTransformTrack::StaticClass())
 	.SetBlenderSystem<UMovieScenePiecewiseDoubleBlenderSystem>()
 	.Commit();
 
@@ -700,6 +653,7 @@ FMovieSceneTracksComponentTypes::FMovieSceneTracksComponentTypes()
 	// Set up integer properties
 	BuiltInComponents->PropertyRegistry.DefineProperty(Integer, TEXT("Apply Integer Properties"))
 	.AddSoleChannel(BuiltInComponents->IntegerResult)
+	.SetDefaultTrackType(UMovieSceneIntegerTrack::StaticClass())
 	.SetBlenderSystem<UMovieScenePiecewiseIntegerBlenderSystem>()
 	.SetCustomAccessors(&Accessors.Integer)
 	.Commit();
@@ -708,6 +662,7 @@ FMovieSceneTracksComponentTypes::FMovieSceneTracksComponentTypes()
 	// Set up float properties
 	BuiltInComponents->PropertyRegistry.DefineProperty(Float, TEXT("Apply float Properties"))
 	.AddSoleChannel(BuiltInComponents->DoubleResult[0])
+	.SetDefaultTrackType(UMovieSceneFloatTrack::StaticClass())
 	.SetBlenderSystem<UMovieScenePiecewiseDoubleBlenderSystem>()
 	.SetCustomAccessors(&Accessors.Float)
 	.Commit(FFloatHandler());
@@ -716,6 +671,7 @@ FMovieSceneTracksComponentTypes::FMovieSceneTracksComponentTypes()
 	// Set up double properties
 	BuiltInComponents->PropertyRegistry.DefineProperty(Double, TEXT("Apply Double Properties"))
 	.AddSoleChannel(BuiltInComponents->DoubleResult[0])
+	.SetDefaultTrackType(UMovieSceneDoubleTrack::StaticClass())
 	.SetBlenderSystem<UMovieScenePiecewiseDoubleBlenderSystem>()
 	.SetCustomAccessors(&Accessors.Double)
 	.Commit();
@@ -727,14 +683,21 @@ FMovieSceneTracksComponentTypes::FMovieSceneTracksComponentTypes()
 	.AddComposite(BuiltInComponents->DoubleResult[1], &FIntermediateColor::G)
 	.AddComposite(BuiltInComponents->DoubleResult[2], &FIntermediateColor::B)
 	.AddComposite(BuiltInComponents->DoubleResult[3], &FIntermediateColor::A)
+	.SetDefaultTrackType(UMovieSceneColorTrack::StaticClass())
 	.SetBlenderSystem<UMovieScenePiecewiseDoubleBlenderSystem>()
 	.SetCustomAccessors(&Accessors.Color)
-	.Commit(FColorHandler());
+	.Commit();
 
 	// --------------------------------------------------------------------------------------------
 	// Set up string properties
 	BuiltInComponents->PropertyRegistry.DefineProperty(String, TEXT("Apply String Properties"))
 	.AddSoleChannel(BuiltInComponents->StringResult)
+	.Commit();
+
+	// --------------------------------------------------------------------------------------------
+	// Set up text properties
+	BuiltInComponents->PropertyRegistry.DefineProperty(Text, TEXT("Apply Text Properties"))
+	.AddSoleChannel(BuiltInComponents->TextResult)
 	.Commit();
 
 	// --------------------------------------------------------------------------------------------
@@ -788,9 +751,10 @@ FMovieSceneTracksComponentTypes::FMovieSceneTracksComponentTypes()
 	.AddComposite(BuiltInComponents->DoubleResult[1], &FFloatIntermediateVector::Y)
 	.AddComposite(BuiltInComponents->DoubleResult[2], &FFloatIntermediateVector::Z)
 	.AddComposite(BuiltInComponents->DoubleResult[3], &FFloatIntermediateVector::W)
+	.SetDefaultTrackType(UMovieSceneFloatVectorTrack::StaticClass())
 	.SetBlenderSystem<UMovieScenePiecewiseDoubleBlenderSystem>()
 	.SetCustomAccessors(&Accessors.FloatVector)
-	.Commit(FFloatVectorHandler());
+	.Commit();
 
 	BuiltInComponents->PropertyRegistry.DefineCompositeProperty(Parameters.Vector2, TEXT("Vector2 Parameters"))
 	.AddComposite(BuiltInComponents->DoubleResult[0], &FFloatIntermediateVector::X)
@@ -810,9 +774,10 @@ FMovieSceneTracksComponentTypes::FMovieSceneTracksComponentTypes()
 	.AddComposite(BuiltInComponents->DoubleResult[1], &FDoubleIntermediateVector::Y)
 	.AddComposite(BuiltInComponents->DoubleResult[2], &FDoubleIntermediateVector::Z)
 	.AddComposite(BuiltInComponents->DoubleResult[3], &FDoubleIntermediateVector::W)
+	.SetDefaultTrackType(UMovieSceneDoubleVectorTrack::StaticClass())
 	.SetBlenderSystem<UMovieScenePiecewiseDoubleBlenderSystem>()
 	.SetCustomAccessors(&Accessors.DoubleVector)
-	.Commit(FDoubleVectorHandler());
+	.Commit();
 
 	// --------------------------------------------------------------------------------------------
 	// Set up FEulerTransform properties
@@ -826,6 +791,7 @@ FMovieSceneTracksComponentTypes::FMovieSceneTracksComponentTypes()
 	.AddComposite(BuiltInComponents->DoubleResult[6], &FIntermediate3DTransform::S_X)
 	.AddComposite(BuiltInComponents->DoubleResult[7], &FIntermediate3DTransform::S_Y)
 	.AddComposite(BuiltInComponents->DoubleResult[8], &FIntermediate3DTransform::S_Z)
+	.SetDefaultTrackType(UMovieSceneEulerTransformTrack::StaticClass())
 	.SetBlenderSystem<UMovieScenePiecewiseDoubleBlenderSystem>()
 	.Commit();
 

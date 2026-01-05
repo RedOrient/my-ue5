@@ -14,8 +14,6 @@
 #include "MovieSceneTracksComponentTypes.h"
 #include "EntitySystem/MovieSceneEntityGroupingSystem.h"
 #include "Systems/MovieScenePropertyInstantiator.h"
-// For APostProcessVolume
-#include "Engine/PostProcessVolume.h"
 
 #include UE_INLINE_GENERATED_CPP_BY_NAME(MovieSceneVisibilitySystem)
 
@@ -27,10 +25,6 @@ struct FPreAnimatedVisibilityState
 	bool bHidden = false;
 	bool bActorTemporarilyHiddenInEditor = false;
 	bool bComponentIsVisibleInEditor = false;
-	SLBegin(Liziqi,2025-10-31,Restore PostProcessVolume Value)
-    // Store APostProcessVolume::bEnabled state so we can restore it after sequence playback
-    bool bPostProcessVolumeEnabled = false;
-	SLEnd(Liziqi,2025-10-31,Restore PostProcessVolume Value)
 
 	FPreAnimatedVisibilityState()
 	{}
@@ -58,14 +52,7 @@ struct FPreAnimatedVisibilityTraits : FBoundObjectPreAnimatedStateTraits
 #else
 				false;
 #endif  // WITH_EDITOR
-			SLBegin(Liziqi,2025-10-31,Restore PostProcessVolume Value)
-			StorageType Storage(bHidden, bTemporarilyHiddenInEditor, false);
-			if (APostProcessVolume* PPV = Cast<APostProcessVolume>(Actor))
-            {
-                Storage.bPostProcessVolumeEnabled = PPV->bEnabled;
-            }
-			SLEnd(Liziqi,2025-10-31,Restore PostProcessVolume Value)
-			return Storage;
+			return StorageType(bHidden, bTemporarilyHiddenInEditor, false);
 		}
 		else if (USceneComponent* SceneComponent = Cast<USceneComponent>(ObjectPtr))
 		{
@@ -89,14 +76,7 @@ struct FPreAnimatedVisibilityTraits : FBoundObjectPreAnimatedStateTraits
 #if WITH_EDITOR
 			Actor->SetIsTemporarilyHiddenInEditor(InOutCachedValue.bActorTemporarilyHiddenInEditor);
 #endif  // WITH_EDITOR
-SLBegin(Liziqi,2025-10-31,Restore PostProcessVolume Value)
-            // Restore PostProcessVolume enable state if applicable
-            if (APostProcessVolume* PPV = Cast<APostProcessVolume>(Actor))
-            {
-                PPV->bEnabled = InOutCachedValue.bPostProcessVolumeEnabled;
-            }
 		}
-SLEnd(Liziqi,2025-10-31,Restore PostProcessVolume Value)
 		else if (USceneComponent* SceneComponent = Cast<USceneComponent>(ObjectPtr))
 		{
 			SceneComponent->SetHiddenInGame(InOutCachedValue.bHidden);
@@ -141,12 +121,6 @@ struct FVisibilityTask
 
 				if (AActor* Actor = Cast<AActor>(BoundObject))
 				{
-					SLBegin(Liziqi,2025-10-21,Can disabled PostProcessVolume when rendering on movie pipeline)
-					if (APostProcessVolume* PostProcessVolume = Cast<APostProcessVolume>(Actor))
-					{
-						PostProcessVolume->bEnabled = bShouldBeVisible;
-					}
-					SLEnd(Liziqi, 2025-10-21, Can disabled PostProcessVolume when rendering on movie pipeline)
 					Actor->SetActorHiddenInGame(!bShouldBeVisible);
 #if WITH_EDITOR
 					if (GIsEditor && Actor->GetWorld() != nullptr && !Actor->GetWorld()->IsPlayInEditor())

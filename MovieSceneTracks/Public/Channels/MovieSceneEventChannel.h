@@ -33,7 +33,7 @@ struct FMovieSceneEventChannel : public FMovieSceneChannel
 	 *
 	 * @return An object that is able to manipulate this channel's data
 	 */
-	FORCEINLINE TMovieSceneChannelData<FMovieSceneEvent> GetData()
+	inline TMovieSceneChannelData<FMovieSceneEvent> GetData()
 	{
 		return TMovieSceneChannelData<FMovieSceneEvent>(&KeyTimes, &KeyValues, this, &KeyHandles);
 	}
@@ -43,7 +43,7 @@ struct FMovieSceneEventChannel : public FMovieSceneChannel
 	 *
 	 * @return An object that is able to interrogate this channel's data
 	 */
-	FORCEINLINE TMovieSceneChannelData<const FMovieSceneEvent> GetData() const
+	inline TMovieSceneChannelData<const FMovieSceneEvent> GetData() const
 	{
 		return TMovieSceneChannelData<const FMovieSceneEvent>(&KeyTimes, &KeyValues);
 	}

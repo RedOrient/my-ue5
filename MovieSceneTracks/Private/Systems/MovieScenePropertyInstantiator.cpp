@@ -1132,8 +1132,26 @@ UE::MovieScene::FPropertyRecomposerPropertyInfo UMovieScenePropertyInstantiatorS
 	using namespace UE::MovieScene;
 
 	TOptionalComponentReader<FMovieScenePropertyBinding> PropertyBinding = Linker->EntityManager.ReadComponent(EntityID, BuiltInComponents->PropertyBinding);
-	TOptionalComponentReader<FEntityGroupID>             GroupID         = Linker->EntityManager.ReadComponent(EntityID, BuiltInComponents->Group);
-	if (!PropertyBinding || !GroupID)
+	if (!PropertyBinding)
+	{
+		return FPropertyRecomposerPropertyInfo::Invalid();
+	}
+
+	TOptionalComponentReader<FEntityGroupID> GroupID = Linker->EntityManager.ReadComponent(EntityID, BuiltInComponents->Group);
+	if (!GroupID)
+	{
+		// If this Entity didn't have a group, see if any of its children are bound to the same object and use that
+		Linker->EntityManager.IterateImmediateChildren(EntityID, [this, Object, &GroupID](FMovieSceneEntityID ChildEntityID){
+			TOptionalComponentReader<UObject*>       BoundObject = this->Linker->EntityManager.ReadComponent(ChildEntityID, BuiltInComponents->BoundObject);
+			TOptionalComponentReader<FEntityGroupID> ChildGroup  = this->Linker->EntityManager.ReadComponent(ChildEntityID, BuiltInComponents->Group);
+			if (BoundObject && *BoundObject == Object && ChildGroup)
+			{
+				GroupID = MoveTemp(ChildGroup);
+			}
+		});
+	}
+
+	if (!GroupID)
 	{
 		return FPropertyRecomposerPropertyInfo::Invalid();
 	}

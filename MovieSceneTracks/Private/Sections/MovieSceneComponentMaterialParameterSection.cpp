@@ -168,7 +168,7 @@ void UMovieSceneComponentMaterialParameterSection::PostEditUndo()
 	CacheChannelProxy();
 }
 #endif
-void UMovieSceneComponentMaterialParameterSection::AddScalarParameterKey(const FMaterialParameterInfo& InParameterInfo, FFrameNumber InTime, float InValue, const FString& InLayerName, const FString& InAssetName)
+void UMovieSceneComponentMaterialParameterSection::AddScalarParameterKey(const FMaterialParameterInfo& InParameterInfo, FFrameNumber InTime, float InValue, const FString& InLayerName, const FString& InAssetName, EMovieSceneKeyInterpolation DefaultInterpolation)
 {
 	FMovieSceneFloatChannel* ExistingChannel = nullptr;
 	for (FScalarMaterialParameterInfoAndCurve& ScalarParameterInfoAndCurve : ScalarParameterInfosAndCurves)
@@ -190,7 +190,8 @@ void UMovieSceneComponentMaterialParameterSection::AddScalarParameterKey(const F
 		CacheChannelProxy();
 	}
 
-	ExistingChannel->GetData().UpdateOrAddKey(InTime, FMovieSceneFloatValue(InValue));
+	EMovieSceneKeyInterpolation Interpolation = GetInterpolationMode(ExistingChannel, InTime, DefaultInterpolation);
+	AddKeyToChannel(ExistingChannel, InTime, InValue, Interpolation);
 
 	if (TryModify())
 	{
@@ -198,7 +199,7 @@ void UMovieSceneComponentMaterialParameterSection::AddScalarParameterKey(const F
 	}
 }
 
-void UMovieSceneComponentMaterialParameterSection::AddColorParameterKey(const FMaterialParameterInfo& InParameterInfo, FFrameNumber InTime, FLinearColor InValue, const FString& InLayerName, const FString& InAssetName, const FParameterChannelNames& InChannelNames)
+void UMovieSceneComponentMaterialParameterSection::AddColorParameterKey(const FMaterialParameterInfo& InParameterInfo, FFrameNumber InTime, FLinearColor InValue, const FString& InLayerName, const FString& InAssetName, const FParameterChannelNames& InChannelNames, EMovieSceneKeyInterpolation DefaultInterpolation)
 {
 	FColorMaterialParameterInfoAndCurves* ExistingCurves = nullptr;
 	for (FColorMaterialParameterInfoAndCurves& ColorParameterInfoAndCurve : ColorParameterInfosAndCurves)
@@ -221,10 +222,19 @@ void UMovieSceneComponentMaterialParameterSection::AddColorParameterKey(const FM
 		CacheChannelProxy();
 	}
 
-	ExistingCurves->RedCurve.GetData().UpdateOrAddKey(InTime, FMovieSceneFloatValue(InValue.R));
-	ExistingCurves->GreenCurve.GetData().UpdateOrAddKey(InTime, FMovieSceneFloatValue(InValue.G));
-	ExistingCurves->BlueCurve.GetData().UpdateOrAddKey(InTime, FMovieSceneFloatValue(InValue.B));
-	ExistingCurves->AlphaCurve.GetData().UpdateOrAddKey(InTime, FMovieSceneFloatValue(InValue.A));
+	EMovieSceneKeyInterpolation RedInterpolation = GetInterpolationMode(&ExistingCurves->RedCurve, InTime, DefaultInterpolation);
+	AddKeyToChannel(&ExistingCurves->RedCurve, InTime, InValue.R, RedInterpolation);
+
+	EMovieSceneKeyInterpolation GreenInterpolation = GetInterpolationMode(&ExistingCurves->GreenCurve, InTime, DefaultInterpolation);
+	AddKeyToChannel(&ExistingCurves->GreenCurve, InTime, InValue.G, GreenInterpolation);
+
+	EMovieSceneKeyInterpolation BlueInterpolation = GetInterpolationMode(&ExistingCurves->BlueCurve, InTime, DefaultInterpolation);
+	AddKeyToChannel(&ExistingCurves->BlueCurve, InTime, InValue.B, BlueInterpolation);
+
+	EMovieSceneKeyInterpolation AlphaInterpolation = GetInterpolationMode(&ExistingCurves->AlphaCurve, InTime, DefaultInterpolation);
+	AddKeyToChannel(&ExistingCurves->AlphaCurve, InTime, InValue.A, AlphaInterpolation);
+
+
 
 	if (TryModify())
 	{

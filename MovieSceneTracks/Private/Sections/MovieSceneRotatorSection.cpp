@@ -6,6 +6,8 @@
 #include "MovieSceneTracksComponentTypes.h"
 #include "Tracks/MovieScenePropertyTrack.h"
 
+#include UE_INLINE_GENERATED_CPP_BY_NAME(MovieSceneRotatorSection)
+
 #if WITH_EDITOR
 struct FRotatorSectionEditorData
 {

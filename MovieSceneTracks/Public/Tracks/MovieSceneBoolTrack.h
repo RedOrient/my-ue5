@@ -6,6 +6,7 @@
 #include "UObject/ObjectMacros.h"
 #include "Tracks/MovieScenePropertyTrack.h"
 #include "Compilation/IMovieSceneTrackTemplateProducer.h"
+#include "EntitySystem/IMovieSceneEntityProvider.h"
 #include "MovieSceneBoolTrack.generated.h"
 
 /**
@@ -15,6 +16,7 @@ UCLASS( MinimalAPI )
 class UMovieSceneBoolTrack
 	: public UMovieScenePropertyTrack
 	, public IMovieSceneTrackTemplateProducer
+	, public IMovieSceneEntityProvider
 {
 	GENERATED_BODY()
 
@@ -25,4 +27,8 @@ public:
 	virtual bool SupportsType(TSubclassOf<UMovieSceneSection> SectionClass) const override;
 	virtual UMovieSceneSection* CreateNewSection() override;
 	virtual FMovieSceneEvalTemplatePtr CreateTemplateForSection(const UMovieSceneSection& InSection) const override;
+
+	//~ IMovieSceneEntityProvider interface
+	virtual void ImportEntityImpl(UMovieSceneEntitySystemLinker* EntityLinker, const FEntityImportParams& Params, FImportedEntity* OutImportedEntity) override;
+	virtual bool PopulateEvaluationFieldImpl(const TRange<FFrameNumber>& EffectiveRange, const FMovieSceneEvaluationFieldEntityMetaData& InMetaData, FMovieSceneEntityComponentFieldBuilder* OutFieldBuilder) override;
 };

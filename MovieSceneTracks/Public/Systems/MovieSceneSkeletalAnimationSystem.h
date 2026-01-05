@@ -2,9 +2,11 @@
 
 #pragma once
 
+#include "EntitySystem/MovieSceneEntityGroupingSystem.h"
 #include "EntitySystem/MovieSceneEntitySystem.h"
 #include "EntitySystem/MovieSceneSequenceInstanceHandle.h"
 #include "Evaluation/MovieScenePlayback.h"
+#include "MovieSceneTracksComponentTypes.h"
 #include "UObject/ObjectKey.h"
 #include "MovieSceneSkeletalAnimationSystem.generated.h"
 
@@ -39,7 +41,7 @@ struct FActiveSkeletalAnimation
 struct FBoneTransformFinalizeData
 {
 	FBoneTransformFinalizeData();
-	USkeletalMeshComponent* SkeletalMeshComponent;
+	TWeakObjectPtr<USkeletalMeshComponent> SkeletalMeshComponent;
 	ESwapRootBone SwapRootBone;
 	FTransform MeshRelativeRootMotionTransform;
 	TOptional<FTransform> InitialActorTransform;
@@ -84,7 +86,7 @@ struct FSkeletalAnimationSystemData
 	void ResetSkeletalAnimations();
 
 	/** Map of active skeletal animations for each bound object */
-	TMap<USkeletalMeshComponent*, FBoundObjectActiveSkeletalAnimations> SkeletalAnimations;
+	TMap<TWeakObjectPtr<USkeletalMeshComponent>, FBoundObjectActiveSkeletalAnimations> SkeletalAnimations;
 
 	/** Map of persistent montage data */
 	TMap<FObjectKey, TMap<FObjectKey, FMontagePlayerPerSectionData>> MontageData;
@@ -110,10 +112,40 @@ public:
 	MOVIESCENETRACKS_API TOptional<FTransform> GetInitialActorTransform(UObject* InObject) const;
 	MOVIESCENETRACKS_API TOptional<FQuat> GetInverseMeshToActorRotation(UObject* InObject) const;
 
+protected:
+	
+	struct FAnimationGroupingPolicy
+	{
+		using GroupKeyType = FObjectKey;
+
+		bool GetGroupKey(UObject* Object, FMovieSceneSkeletalAnimationComponentData ComponentData, GroupKeyType& OutGroupKey)
+		{
+			// ComponentData is only used to filter the grouping to objects with animations. If it were used for the key, it would only group objects
+			// with identical animations, so instead the object is used for both the key and value of the tuple. 
+			OutGroupKey = FObjectKey(Object);
+			return true;
+		}
+		
+#if WITH_EDITOR
+		bool OnObjectsReplaced(GroupKeyType& InOutKey, const TMap<UObject*, UObject*>& ReplacementMap)
+		{
+			if (UObject* const * NewObject = ReplacementMap.Find(InOutKey.ResolveObjectPtr()))
+			{
+				InOutKey = *NewObject;
+				return true;
+			}
+			return false;
+		}
+#endif
+	
+	};
+
 private:
 
 	virtual void OnSchedulePersistentTasks(UE::MovieScene::IEntitySystemScheduler* TaskScheduler) override;
 	virtual void OnRun(FSystemTaskPrerequisites& InPrerequisites, FSystemSubsequentTasks& Subsequents) override final;
+	virtual void OnLink() override;
+	virtual void OnUnlink() override;
 
 	virtual bool IsRelevantImpl(UMovieSceneEntitySystemLinker* InLinker) const override;
 
@@ -122,5 +154,6 @@ private:
 private:
 
 	UE::MovieScene::FSkeletalAnimationSystemData SystemData;
+	UE::MovieScene::FEntityGroupingPolicyKey GroupingKey;
 };
 

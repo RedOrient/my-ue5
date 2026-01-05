@@ -209,7 +209,7 @@ public:
 private:
 
 	template<typename ChannelType, typename ForEachFunction>
-	FORCEINLINE static void ForEachInternal(ForEachFunction InFunction, const TMap<FName, ChannelType>& InMapToIterate) 
+	inline static void ForEachInternal(ForEachFunction InFunction, const TMap<FName, ChannelType>& InMapToIterate) 
 	{
 		for (auto& Item : InMapToIterate)
 		{

@@ -16,21 +16,18 @@ struct FInstanceToParentPair
 	// In this struct representation the Child represents this sequence.
 	UE::MovieScene::FInstanceHandle Child;
 	UE::MovieScene::FInstanceHandle Parent;
+	int32 Depth = 0;
 
-	FInstanceToParentPair(const UE::MovieScene::FInstanceHandle Child, const UE::MovieScene::FInstanceHandle Parent)
+	FInstanceToParentPair(const UE::MovieScene::FInstanceHandle Child, const UE::MovieScene::FInstanceHandle Parent, const int32 Depth)
 	{
 		this->Child = Child;
 		this->Parent = Parent;
+		this->Depth = Depth;
 	}
 
 	bool operator<(const FInstanceToParentPair& Other) const
 	{
-		// If this is the parent of Other, then it should be first in the mapping.
-		if(Child == Other.Parent)
-		{
-			return true;
-		}
-		return false;
+		return Depth < Other.Depth;
 	}
 
 	bool operator==(const FInstanceToParentPair& Other) const

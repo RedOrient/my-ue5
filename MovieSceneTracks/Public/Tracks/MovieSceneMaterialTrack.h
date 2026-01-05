@@ -7,7 +7,7 @@
 #include "Sections/MovieSceneParameterSection.h"
 #include "MovieSceneNameableTrack.h"
 #include "EntitySystem/IMovieSceneEntityProvider.h"
-#include "MaterialTypes.h"
+#include "Materials/MaterialParameters.h"
 #if WITH_EDITOR
 #include "Styling/SlateColor.h"
 #endif
@@ -114,8 +114,9 @@ public:
 	* @param ParameterName The name of the parameter to add a key for.
 	* @param Time The time to add the new key.
 	* @param The value for the new key.
+	* @param DefaultInterpolation The default interpolation to use for thew new key.
 	*/
-	MOVIESCENETRACKS_API void AddScalarParameterKey(FName ParameterName, FFrameNumber Position, float Value);
+	MOVIESCENETRACKS_API void AddScalarParameterKey(FName ParameterName, FFrameNumber Time, float Value, EMovieSceneKeyInterpolation DefaultInterpolation = EMovieSceneKeyInterpolation::Auto);
 
 	/**
 	 * Adds a scalar parameter key to the track. 
@@ -123,8 +124,9 @@ public:
 	 * @param Time The time to add the new key.
 	 * @param RowIndex The preferred row index on which to look for sections.
 	 * @param The value for the new key.
+	 * @param DefaultInterpolation The default interpolation to use for thew new key.
 	 */
-	MOVIESCENETRACKS_API void AddScalarParameterKey(FName ParameterName, FFrameNumber Position, int32 RowIndex, float Value);
+	MOVIESCENETRACKS_API void AddScalarParameterKey(FName ParameterName, FFrameNumber Time, int32 RowIndex, float Value, EMovieSceneKeyInterpolation DefaultInterpolation = EMovieSceneKeyInterpolation::Auto);
 
 	/**
 	* Adds a scalar parameter key to the track.
@@ -133,8 +135,9 @@ public:
 	* @param The value for the new key.
 	* @param InLayerName Optional layer name for use in UI.
 	* @param InAssetName Optional asset name for use in UI.
+	* @param DefaultInterpolation The default interpolation to use for thew new key.
 	*/
-	MOVIESCENETRACKS_API void AddScalarParameterKey(const FMaterialParameterInfo& ParameterInfo, FFrameNumber Position, float Value, const FString& InLayerName, const FString& InAssetName);
+	MOVIESCENETRACKS_API void AddScalarParameterKey(const FMaterialParameterInfo& ParameterInfo, FFrameNumber Time, float Value, const FString& InLayerName, const FString& InAssetName, EMovieSceneKeyInterpolation DefaultInterpolation = EMovieSceneKeyInterpolation::Auto);
 
 	/**
 	* Adds a scalar parameter key to the track.
@@ -144,16 +147,18 @@ public:
 	* @param The value for the new key.
 	* @param InLayerName Optional layer name for use in UI.
 	* @param InAssetName Optional asset name for use in UI.
+	* @param DefaultInterpolation The default interpolation to use for thew new key.
 	*/
-	MOVIESCENETRACKS_API void AddScalarParameterKey(const FMaterialParameterInfo& ParameterInfo, FFrameNumber Position, int32 RowIndex, float Value, const FString& InLayerName, const FString& InAssetName);
+	MOVIESCENETRACKS_API void AddScalarParameterKey(const FMaterialParameterInfo& ParameterInfo, FFrameNumber Time, int32 RowIndex, float Value, const FString& InLayerName, const FString& InAssetName, EMovieSceneKeyInterpolation DefaultInterpolation = EMovieSceneKeyInterpolation::Auto);
 
 	/**
 	* Adds a color parameter key to the track.
 	* @param ParameterName The name of the parameter to add a key for.
 	* @param Time The time to add the new key.
 	* @param The value for the new key.
+	* @param DefaultInterpolation The default interpolation to use for thew new key.
 	*/
-	MOVIESCENETRACKS_API void AddColorParameterKey(FName ParameterName, FFrameNumber Position, FLinearColor Value);
+	MOVIESCENETRACKS_API void AddColorParameterKey(FName ParameterName, FFrameNumber Time, FLinearColor Value, EMovieSceneKeyInterpolation DefaultInterpolation = EMovieSceneKeyInterpolation::Auto);
 
 	/**
 	* Adds a color parameter key to the track.
@@ -161,8 +166,9 @@ public:
 	* @param Time The time to add the new key.
 	* @param RowIndex The preferred row index on which to look for sections.
 	* @param The value for the new key.
+	* @param DefaultInterpolation The default interpolation to use for thew new key.
 	*/
-	MOVIESCENETRACKS_API void AddColorParameterKey(FName ParameterName, FFrameNumber Position, int32 RowIndex, FLinearColor Value);
+	MOVIESCENETRACKS_API void AddColorParameterKey(FName ParameterName, FFrameNumber Time, int32 RowIndex, FLinearColor Value, EMovieSceneKeyInterpolation DefaultInterpolation = EMovieSceneKeyInterpolation::Auto);
 
 	/**
 	* Adds a color parameter key to the track.
@@ -171,8 +177,9 @@ public:
 	* @param The value for the new key.
 	* @param InLayerName Optional layer name for use in UI.
 	* @param InAssetName Optional asset name for use in UI.
+	* @param DefaultInterpolation The default interpolation to use for thew new key.
 	*/
-	MOVIESCENETRACKS_API void AddColorParameterKey(const FMaterialParameterInfo& ParameterInfo, FFrameNumber Position, FLinearColor Value, const FString& InLayerName, const FString& InAssetName);
+	MOVIESCENETRACKS_API void AddColorParameterKey(const FMaterialParameterInfo& ParameterInfo, FFrameNumber Time, FLinearColor Value, const FString& InLayerName, const FString& InAssetName, EMovieSceneKeyInterpolation DefaultInterpolation = EMovieSceneKeyInterpolation::Auto);
 
 	/**
 	* Adds a color parameter key to the track.
@@ -182,8 +189,9 @@ public:
 	* @param The value for the new key.
 	* @param InLayerName Optional layer name for use in UI.
 	* @param InAssetName Optional asset name for use in UI.
+	* @param DefaultInterpolation The default interpolation to use for thew new key.
 	*/
-	MOVIESCENETRACKS_API void AddColorParameterKey(const FMaterialParameterInfo& ParameterInfo, FFrameNumber Position, int32 RowIndex, FLinearColor Value, const FString& InLayerName, const FString& InAssetName);
+	MOVIESCENETRACKS_API void AddColorParameterKey(const FMaterialParameterInfo& ParameterInfo, FFrameNumber Time, int32 RowIndex, FLinearColor Value, const FString& InLayerName, const FString& InAssetName, EMovieSceneKeyInterpolation DefaultInterpolation = EMovieSceneKeyInterpolation::Auto);
 
 	/**
 	* Adds a color parameter key to the track.
@@ -194,8 +202,9 @@ public:
 	* @param InLayerName Optional layer name for use in UI.
 	* @param InAssetName Optional asset name for use in UI.
 	* @param InChannelNames Optional channel names for the 4 vector channels for use in the UI.
+	* @param DefaultInterpolation The default interpolation to use for thew new key.
 	*/
-	MOVIESCENETRACKS_API void AddColorParameterKey(const FMaterialParameterInfo& ParameterInfo, FFrameNumber Position, int32 RowIndex, FLinearColor Value, const FString& InLayerName, const FString& InAssetName, const FParameterChannelNames& InChannelNames);
+	MOVIESCENETRACKS_API void AddColorParameterKey(const FMaterialParameterInfo& ParameterInfo, FFrameNumber Time, int32 RowIndex, FLinearColor Value, const FString& InLayerName, const FString& InAssetName, const FParameterChannelNames& InChannelNames, EMovieSceneKeyInterpolation DefaultInterpolation = EMovieSceneKeyInterpolation::Auto);
 
 private:
 

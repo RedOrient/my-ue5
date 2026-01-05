@@ -9,7 +9,7 @@
 #include "MovieSceneSection.h"
 #include "Channels/MovieSceneFloatChannel.h"
 #include "EntitySystem/IMovieSceneEntityProvider.h"
-#include "MaterialTypes.h"
+#include "Materials/MaterialParameters.h"
 #include "MovieSceneComponentMaterialParameterSection.generated.h"
 
 /**
@@ -107,11 +107,11 @@ class UMovieSceneComponentMaterialParameterSection
 public:
 	/** Adds a a key for a specific scalar parameter at the specified time with the specified value. */
 	UFUNCTION(BlueprintCallable, Category = "Sequencer|Section")
-	MOVIESCENETRACKS_API void AddScalarParameterKey(const FMaterialParameterInfo& InParameterInfo, FFrameNumber InTime, float InValue, const FString& InLayerName, const FString& InAssetName);
+	MOVIESCENETRACKS_API void AddScalarParameterKey(const FMaterialParameterInfo& InParameterInfo, FFrameNumber InTime, float InValue, const FString& InLayerName, const FString& InAssetName, EMovieSceneKeyInterpolation DefaultInterpolation = EMovieSceneKeyInterpolation::Auto);
 
 	/** Adds a a key for a specific color parameter at the specified time with the specified value. */
 	UFUNCTION(BlueprintCallable, Category = "Sequencer|Section")
-	MOVIESCENETRACKS_API void AddColorParameterKey(const FMaterialParameterInfo& InParameterInfo, FFrameNumber InTime, FLinearColor InValue, const FString& InLayerName, const FString& InAssetName, const FParameterChannelNames& InChannelNames=FParameterChannelNames());
+	MOVIESCENETRACKS_API void AddColorParameterKey(const FMaterialParameterInfo& InParameterInfo, FFrameNumber InTime, FLinearColor InValue, const FString& InLayerName, const FString& InAssetName, const FParameterChannelNames& InChannelNames=FParameterChannelNames(), EMovieSceneKeyInterpolation DefaultInterpolation = EMovieSceneKeyInterpolation::Auto);
 
 	/** 
 	 * Removes a scalar parameter from this section. 

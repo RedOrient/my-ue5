@@ -73,21 +73,18 @@ void SetComponentTransformAndVelocity(UObject* Object, const FIntermediate3DTran
 	UE::MovieScene::FIntermediate3DTransform::ApplyTransformTo(CastChecked<USceneComponent>(Object), InTransform);
 }
 
-FIntermediateColor GetLightComponentLightColor(const UObject* Object, EColorPropertyType InColorType)
+FIntermediateColor GetLightComponentLightColor(const UObject* Object)
 {
-	ensure(InColorType == EColorPropertyType::Color);
-
 	const ULightComponent* LightComponent = CastChecked<const ULightComponent>(Object);
 	return FIntermediateColor(LightComponent->GetLightColor());
 }
 
-void SetLightComponentLightColor(UObject* Object, EColorPropertyType InColorType, const FIntermediateColor& InColor)
+void SetLightComponentLightColor(UObject* Object, const FIntermediateColor& InColor)
 {
 	// This is a little esoteric - ULightComponentBase::LightColor is the UPROPERTY that generates the meta-data
 	// for this custom callback, but it is an FColor, even though the public get/set functions expose it as an
 	// FLinearColor. FIntermediateColor is always blended and dealt with in linear space, so it's fine to 
 	// simply reinterpret the color
-	ensure(InColorType == EColorPropertyType::Color);
 
 	const bool bConvertBackToSRgb = true;
 	ULightComponent* LightComponent = CastChecked<ULightComponent>(Object);
@@ -142,22 +139,18 @@ void SetDirectionalLightComponentLightSourceAngle(UObject* Object, float InLight
 	DirectionalLightComponent->SetLightSourceAngle(InLightSourceAngle);
 }
 
-FIntermediateColor GetSkyLightComponentLightColor(const UObject* Object, EColorPropertyType InColorType)
+FIntermediateColor GetSkyLightComponentLightColor(const UObject* Object)
 {
-	ensure(InColorType == EColorPropertyType::Color);
-
 	const USkyLightComponent* SkyLightComponent = CastChecked<const USkyLightComponent>(Object);
 	return FIntermediateColor(SkyLightComponent->GetLightColor());
 }
 
-void SetSkyLightComponentLightColor(UObject* Object, EColorPropertyType InColorType, const FIntermediateColor& InColor)
+void SetSkyLightComponentLightColor(UObject* Object, const FIntermediateColor& InColor)
 {
 	// This is a little esoteric - ULightComponentBase::LightColor is the UPROPERTY that generates the meta-data
 	// for this custom callback, but it is an FColor, even though the public get/set functions expose it as an
 	// FLinearColor. FIntermediateColor is always blended and dealt with in linear space, so it's fine to 
 	// simply reinterpret the color
-	ensure(InColorType == EColorPropertyType::Color);
-
 	USkyLightComponent* SkyLightComponent = CastChecked<USkyLightComponent>(Object);
 	SkyLightComponent->SetLightColor(InColor.GetLinearColor());
 }
@@ -172,6 +165,18 @@ void SetSkyLightComponentIntensity(UObject* Object, float InIntensity)
 {
 	USkyLightComponent* SkyLightComponent = CastChecked<USkyLightComponent>(Object);
 	SkyLightComponent->SetIntensity(InIntensity);
+}
+
+bool GetSkyLightComponentRealtimeCapture(const UObject* Object, FBoolPropertyTraits::FBoolMetaData InMetadata)
+{
+	const USkyLightComponent* SkyLightComponent = CastChecked<const USkyLightComponent>(Object);
+	return SkyLightComponent->bRealTimeCapture;
+}
+
+void SetSkyLightComponentRealtimeCapture(UObject* Object, FBoolPropertyTraits::FBoolMetaData InMetadata, bool bInRealtimeCapture)
+{
+	USkyLightComponent* SkyLightComponent = CastChecked<USkyLightComponent>(Object);
+	SkyLightComponent->SetRealTimeCapture(bInRealtimeCapture);
 }
 
 float GetSkyAtmosphereComponentMieScatteringScale(const UObject* Object)
@@ -210,18 +215,14 @@ void SetSkyAtmosphereComponentOtherAbsorptionScale(UObject* Object, float InOthe
 	SkyAtmosphereComponent->SetOtherAbsorptionScale(InOtherAbsorptionScale);
 }
 
-FIntermediateColor GetSkyAtmosphereComponentOtherAbsorption(const UObject* Object, EColorPropertyType InColorType)
+FIntermediateColor GetSkyAtmosphereComponentOtherAbsorption(const UObject* Object)
 {
-	ensure(InColorType == EColorPropertyType::Linear);
-	
 	const USkyAtmosphereComponent* SkyAtmosphereComponent = CastChecked<const USkyAtmosphereComponent>(Object);
 	return FIntermediateColor(SkyAtmosphereComponent->OtherAbsorption);
 }
 
-void SetSkyAtmosphereComponentOtherAbsorption(UObject* Object, EColorPropertyType InColorType, const FIntermediateColor& InColor)
+void SetSkyAtmosphereComponentOtherAbsorption(UObject* Object, const FIntermediateColor& InColor)
 {
-	ensure(InColorType == EColorPropertyType::Linear);
-
 	USkyAtmosphereComponent* SkyAtmosphereComponent = CastChecked<USkyAtmosphereComponent>(Object);
 	SkyAtmosphereComponent->SetOtherAbsorption(InColor.GetLinearColor());
 }
@@ -262,82 +263,66 @@ void SetSkyAtmosphereComponentAerialPerspectiveViewDistanceScale(UObject* Object
 	SkyAtmosphereComponent->SetAerialPespectiveViewDistanceScale(InAerialPerspectiveViewDistanceScale);
 }
 
-FIntermediateColor GetSkyAtmosphereComponentMieAbsorption(const UObject* Object, EColorPropertyType InColorType)
+FIntermediateColor GetSkyAtmosphereComponentMieAbsorption(const UObject* Object)
 {
 	// USkyAtmosphereComponent::MieAbsorption is a FLinearColor. FIntermediateColor is always blended and dealt with
 	// in linear space so it should be safe to reinterpret it as linear.
-	ensure(InColorType == EColorPropertyType::Linear);
-
 	const USkyAtmosphereComponent* SkyAtmosphereComponent = CastChecked<const USkyAtmosphereComponent>(Object);
 	return FIntermediateColor(SkyAtmosphereComponent->MieAbsorption);
 }
 
-void SetSkyAtmosphereComponentMieAbsorption(UObject* Object, EColorPropertyType InColorType, const FIntermediateColor& InColor)
+void SetSkyAtmosphereComponentMieAbsorption(UObject* Object, const FIntermediateColor& InColor)
 {
 	// USkyAtmosphereComponent::MieAbsorption is a FLinearColor. FIntermediateColor is always blended and dealt with
 	// in linear space so it should be safe to reinterpret it as linear.
-	ensure(InColorType == EColorPropertyType::Linear);
-
 	USkyAtmosphereComponent* SkyAtmosphereComponent = CastChecked<USkyAtmosphereComponent>(Object);
 	SkyAtmosphereComponent->SetMieAbsorption(InColor.GetLinearColor());
 }
 
-FIntermediateColor GetSkyAtmosphereComponentMieScattering(const UObject* Object, EColorPropertyType InColorType)
+FIntermediateColor GetSkyAtmosphereComponentMieScattering(const UObject* Object)
 {
 	// USkyAtmosphereComponent::MieScattering is a FLinearColor. FIntermediateColor is always blended and dealt with
 	// in linear space so it should be safe to reinterpret it as linear.
-	ensure(InColorType == EColorPropertyType::Linear);
-
 	const USkyAtmosphereComponent* SkyAtmosphereComponent = CastChecked<const USkyAtmosphereComponent>(Object);
 	return FIntermediateColor(SkyAtmosphereComponent->MieScattering);
 }
 
-void SetSkyAtmosphereComponentMieScattering(UObject* Object, EColorPropertyType InColorType, const FIntermediateColor& InColor)
+void SetSkyAtmosphereComponentMieScattering(UObject* Object, const FIntermediateColor& InColor)
 {
 	// USkyAtmosphereComponent::MieScattering is a FLinearColor. FIntermediateColor is always blended and dealt with
 	// in linear space so it should be safe to reinterpret it as linear.
-	ensure(InColorType == EColorPropertyType::Linear);
-
 	USkyAtmosphereComponent* SkyAtmosphereComponent = CastChecked<USkyAtmosphereComponent>(Object);
 	SkyAtmosphereComponent->SetMieScattering(InColor.GetLinearColor());
 }
 
-FIntermediateColor GetSkyAtmosphereComponentRayleighScattering(const UObject* Object, EColorPropertyType InColorType)
+FIntermediateColor GetSkyAtmosphereComponentRayleighScattering(const UObject* Object)
 {
 	// USkyAtmosphereComponent::RayleighScattering is a FLinearColor. FIntermediateColor is always blended and dealt with
 	// in linear space so it should be safe to reinterpret it as linear.
-	ensure(InColorType == EColorPropertyType::Linear);
-
 	const USkyAtmosphereComponent* SkyAtmosphereComponent = CastChecked<const USkyAtmosphereComponent>(Object);
 	return FIntermediateColor(SkyAtmosphereComponent->RayleighScattering);
 }
 
-void SetSkyAtmosphereComponentRayleighScattering(UObject* Object, EColorPropertyType InColorType, const FIntermediateColor& InColor)
+void SetSkyAtmosphereComponentRayleighScattering(UObject* Object, const FIntermediateColor& InColor)
 {
 	// USkyAtmosphereComponent::RayleighScattering is a FLinearColor. FIntermediateColor is always blended and dealt with
 	// in linear space so it should be safe to reinterpret it as linear.
-	ensure(InColorType == EColorPropertyType::Linear);
-
 	USkyAtmosphereComponent* SkyAtmosphereComponent = CastChecked<USkyAtmosphereComponent>(Object);
 	SkyAtmosphereComponent->SetRayleighScattering(InColor.GetLinearColor());
 }
 
-FIntermediateColor GetSkyAtmosphereComponentSkyLuminanceFactor(const UObject* Object, EColorPropertyType InColorType)
+FIntermediateColor GetSkyAtmosphereComponentSkyLuminanceFactor(const UObject* Object)
 {
 	// USkyAtmosphereComponent::SkyLuminanceFactor is a FLinearColor. FIntermediateColor is always blended and dealt with
 	// in linear space so it should be safe to reinterpret it as linear.
-	ensure(InColorType == EColorPropertyType::Linear);
-
 	const USkyAtmosphereComponent* SkyAtmosphereComponent = CastChecked<const USkyAtmosphereComponent>(Object);
 	return FIntermediateColor(SkyAtmosphereComponent->SkyLuminanceFactor);
 }
 
-void SetSkyAtmosphereComponentSkyLuminanceFactor(UObject* Object, EColorPropertyType InColorType, const FIntermediateColor& InColor)
+void SetSkyAtmosphereComponentSkyLuminanceFactor(UObject* Object, const FIntermediateColor& InColor)
 {
 	// USkyAtmosphereComponent::SkyLuminanceFactor is a FLinearColor. FIntermediateColor is always blended and dealt with
 	// in linear space so it should be safe to reinterpret it as linear.
-	ensure(InColorType == EColorPropertyType::Linear);
-
 	USkyAtmosphereComponent* SkyAtmosphereComponent = CastChecked<USkyAtmosphereComponent>(Object);
 	SkyAtmosphereComponent->SetSkyLuminanceFactor(InColor.GetLinearColor());
 }
@@ -450,54 +435,42 @@ void SetExponentialHeightFogComponentVolumetricFogNearFadeInDistance(UObject* Ob
 	ExponentialHeightFogComponent->SetVolumetricFogNearFadeInDistance(InVolumetricFogNearFadeInDistance);
 }
 	
-FIntermediateColor GetExponentialHeightFogComponentDirectionalInscatteringColor(const UObject* Object, EColorPropertyType InColorType)
+FIntermediateColor GetExponentialHeightFogComponentDirectionalInscatteringColor(const UObject* Object)
 {
-	ensure(InColorType == EColorPropertyType::Linear);
-	
 	const UExponentialHeightFogComponent* ExponentialHeightFogComponent = CastChecked<const UExponentialHeightFogComponent>(Object);
 	return FIntermediateColor(ExponentialHeightFogComponent->DirectionalInscatteringLuminance);
 }
 
-void SetExponentialHeightFogComponentDirectionalInscatteringColor(UObject* Object, EColorPropertyType InColorType, const FIntermediateColor& InColor)
+void SetExponentialHeightFogComponentDirectionalInscatteringColor(UObject* Object, const FIntermediateColor& InColor)
 {
-	ensure(InColorType == EColorPropertyType::Linear);
-	
 	UExponentialHeightFogComponent* ExponentialHeightFogComponent = CastChecked<UExponentialHeightFogComponent>(Object);
 	ExponentialHeightFogComponent->SetDirectionalInscatteringColor(InColor.GetLinearColor());
 }
 
-FIntermediateColor GetExponentialHeightFogComponentFogInscatteringColor(const UObject* Object, EColorPropertyType InColorType)
+FIntermediateColor GetExponentialHeightFogComponentFogInscatteringColor(const UObject* Object)
 {
-	ensure(InColorType == EColorPropertyType::Linear);
-	
 	const UExponentialHeightFogComponent* ExponentialHeightFogComponent = CastChecked<const UExponentialHeightFogComponent>(Object);
 	return FIntermediateColor(ExponentialHeightFogComponent->FogInscatteringLuminance);
 }
 
-void SetExponentialHeightFogComponentFogInscatteringColor(UObject* Object, EColorPropertyType InColorType, const FIntermediateColor& InColor)
+void SetExponentialHeightFogComponentFogInscatteringColor(UObject* Object, const FIntermediateColor& InColor)
 {
-	ensure(InColorType == EColorPropertyType::Linear);
-	
 	UExponentialHeightFogComponent* ExponentialHeightFogComponent = CastChecked<UExponentialHeightFogComponent>(Object);
 	ExponentialHeightFogComponent->SetFogInscatteringColor(InColor.GetLinearColor());
 }
 
-FIntermediateColor GetExponentialHeightFogVolumetricFogAlbedo(const UObject* Object, EColorPropertyType InColorType)
+FIntermediateColor GetExponentialHeightFogVolumetricFogAlbedo(const UObject* Object)
 {
 	// UExponentialHeightFog::VolumetricFogAlbedo is an FColor. FIntermediateColor is always blended and dealt with
 	// in linear space, so reinterpret the color.
-	ensure(InColorType == EColorPropertyType::Color);
-
 	const UExponentialHeightFogComponent* ExponentialHeightFogComponent = CastChecked<const UExponentialHeightFogComponent>(Object);
 	return FIntermediateColor(ExponentialHeightFogComponent->VolumetricFogAlbedo);
 }
 
-void SetExponentialHeightFogVolumetricFogAlbedo(UObject* Object, EColorPropertyType InColorType, const FIntermediateColor& InColor)
+void SetExponentialHeightFogVolumetricFogAlbedo(UObject* Object, const FIntermediateColor& InColor)
 {
 	// UExponentialHeightFog::VolumetricFogAlbedo is an FColor. FIntermediateColor is always blended and dealt with
 	// in linear space, so reinterpret the color back to FColor when setting via the public interface.
-	ensure(InColorType == EColorPropertyType::Color);
-
 	UExponentialHeightFogComponent* ExponentialHeightFogComponent = CastChecked<UExponentialHeightFogComponent>(Object);
 	ExponentialHeightFogComponent->SetVolumetricFogAlbedo(InColor.GetColor());
 }
@@ -550,18 +523,14 @@ void SetLocalFogVolumeComponentRadialFogExtinction(UObject* Object, float InRadi
 	LocalFogVolumeComponent->SetRadialFogExtinction(InRadialFogExtinction);
 }
 
-FIntermediateColor GetLocalFogVolumeComponentFogAlbedo(const UObject* Object, EColorPropertyType InColorType)
+FIntermediateColor GetLocalFogVolumeComponentFogAlbedo(const UObject* Object)
 {
-	ensure(InColorType == EColorPropertyType::Linear);
-
 	const ULocalFogVolumeComponent* LocalFogVolumeComponent = CastChecked<ULocalFogVolumeComponent>(Object);
 	return FIntermediateColor(LocalFogVolumeComponent->FogAlbedo);
 }
 
-void SetLocalFogVolumeComponentFogAlbedo(UObject* Object, EColorPropertyType InColorType, const FIntermediateColor& InColor)
+void SetLocalFogVolumeComponentFogAlbedo(UObject* Object, const FIntermediateColor& InColor)
 {
-	ensure(InColorType == EColorPropertyType::Linear);
-
 	ULocalFogVolumeComponent* LocalFogVolumeComponent = CastChecked<ULocalFogVolumeComponent>(Object);
 	LocalFogVolumeComponent->SetFogAlbedo(InColor.GetLinearColor());
 }
@@ -627,6 +596,9 @@ void InitializeMovieSceneTracksAccessors(FMovieSceneTracksComponentTypes* Tracks
 	TracksComponents->Accessors.Float.Add(
 			USkyLightComponent::StaticClass(), GET_MEMBER_NAME_CHECKED(USkyLightComponent, Intensity),
 			GetSkyLightComponentIntensity, SetSkyLightComponentIntensity);
+	TracksComponents->Accessors.Bool.Add(
+			USkyLightComponent::StaticClass(), GET_MEMBER_NAME_CHECKED(USkyLightComponent, bRealTimeCapture),
+			GetSkyLightComponentRealtimeCapture, SetSkyLightComponentRealtimeCapture);
 
 	// SkyAtmosphereComponent
 	TracksComponents->Accessors.Float.Add(

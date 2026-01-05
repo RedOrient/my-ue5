@@ -16,6 +16,7 @@
 #include "IMovieScenePlayer.h"
 #include "MovieSceneSequence.h"
 
+#include "Templates/Greater.h"
 #include "Templates/SharedPointer.h"
 #include "Templates/SubclassOf.h"
 #include "Engine/World.h"

@@ -16,26 +16,26 @@
 #include "Systems/MovieSceneComponentTransformSystem.h"
 #include "Transform/TransformConstraint.h"
 #include "Transform/TransformableHandle.h"
+#include "Transform/TransformableHandleUtils.h"
 #include "Sections/MovieSceneConstrainedSection.h"
 
 #include UE_INLINE_GENERATED_CPP_BY_NAME(MovieSceneConstraintSystem)
 
 
-static UTickableConstraint* CreateConstraintIfNeeded(FConstraintsManagerController& Controller, FConstraintAndActiveChannel* ConstraintAndActiveChannel, const  FConstraintComponentData& ConstraintChannel)
+static UTickableConstraint* CreateConstraintIfNeeded(UWorld* InWorld, const FConstraintAndActiveChannel* InConstraintAndActiveChannel)
 {
-	UTickableConstraint* Constraint = ConstraintAndActiveChannel->GetConstraint();
+	UTickableConstraint* Constraint = InConstraintAndActiveChannel->GetConstraint();
 	if (!Constraint) //if constraint doesn't exist it probably got unspawned so recreate it and add it
 	{
 		return nullptr;
 	}
-	else // it's possible that we have it but it's not in the manager, due to manager not being saved with it (due to spawning or undo/redo).
+	
+	// it's possible that we have it but it's not in the manager, due to manager not being saved with it (due to spawning or undo/redo).
+	if (!FConstraintsManagerController::Get(InWorld).GetConstraint(Constraint->ConstraintID))
 	{
-		const TArray< TWeakObjectPtr<UTickableConstraint>>& ConstraintsArray = Controller.GetConstraintsArray();
-		if (Controller.GetConstraint(Constraint->ConstraintID) == nullptr)
-		{
-			Controller.AddConstraint(Constraint);
-		}
+		FConstraintsManagerController::Get(InWorld).AddConstraint(Constraint);
 	}
+	
 	return Constraint;
 }
 
@@ -84,18 +84,15 @@ struct FPreAnimatedConstraintTraits : FBoundObjectPreAnimatedStateTraits
 	static FPreAnimatedConstraint CachePreAnimatedValue(UObject* InBoundObject, const FConstraintComponentData& ConstraintData)
 	{
 		USceneComponent* SceneComponent = CastChecked<USceneComponent>(InBoundObject);
-		FConstraintsManagerController& Controller = FConstraintsManagerController::Get(SceneComponent->GetWorld());
+		UWorld* World = SceneComponent->GetWorld();
 		if (FConstraintAndActiveChannel* ConstraintAndActiveChannel = ConstraintData.Section->GetConstraintChannel(ConstraintData.ConstraintID))
 		{
 			UTickableConstraint* Constraint = ConstraintAndActiveChannel->GetConstraint().Get();
-			const bool bIsActive = false; //we set static mesh constraints to be inactive to matchup how CR's work in not being valid
+			constexpr bool bIsActive = false; //we set static mesh constraints to be inactive to matchup how CR's work in not being valid
 			const FGuid ID = Constraint ? Constraint->ConstraintID : ConstraintData.ConstraintID;
 			//also need to create it
-			Constraint = CreateConstraintIfNeeded(Controller, ConstraintAndActiveChannel, ConstraintData);
-			if (Constraint)
-			{
-				Controller.AddConstraint(Constraint);
-			}
+			Constraint = CreateConstraintIfNeeded(World, ConstraintAndActiveChannel);
+			
 			return FPreAnimatedConstraint{ ID, (Constraint == nullptr), bIsActive, SceneComponent, ConstraintData.Section };
 		}
 		return FPreAnimatedConstraint{ ConstraintData.ConstraintID, false,false, SceneComponent, ConstraintData.Section };
@@ -143,17 +140,13 @@ struct FPreAnimatedConstraintTraits : FBoundObjectPreAnimatedStateTraits
 struct FEvaluateConstraintChannels
 {
 	FEvaluateConstraintChannels(UWorld* InWorld, FInstanceRegistry* InInstanceRegistry, UMovieSceneConstraintSystem* InSystem)
-		: World(InWorld), InstanceRegistry(InInstanceRegistry), Controller(nullptr), System(InSystem)
+		: World(InWorld), InstanceRegistry(InInstanceRegistry), System(InSystem)
 	{
 		check(World && InstanceRegistry && System);
 	}
 
 	void PreTask()
 	{
-		// Retrieve the controller at the start of the task since this task is now stored persistently
-		Controller = &FConstraintsManagerController::Get(World);
-		check(Controller);
-
 		System->DynamicOffsets.Reset();
 	}
 
@@ -165,7 +158,7 @@ struct FEvaluateConstraintChannels
 			return;
 		}
 
-		UTickableConstraint* Constraint = CreateConstraintIfNeeded(*Controller, ConstraintAndActiveChannel, ConstraintChannel);
+		UTickableConstraint* Constraint = CreateConstraintIfNeeded(World, ConstraintAndActiveChannel);
 		if (!Constraint)
 		{
 			return;
@@ -174,9 +167,9 @@ struct FEvaluateConstraintChannels
 		const FSequenceInstance& TargetInstance = InstanceRegistry->GetInstance(InstanceHandle);
 		TSharedRef<FSharedPlaybackState> SharedPlaybackState = TargetInstance.GetSharedPlaybackState();
 
-		bool Result = false;
-		ConstraintAndActiveChannel->ActiveChannel.Evaluate(FrameTime, Result);
-		Constraint->SetActive(Result);
+		bool Value = false;
+		ConstraintAndActiveChannel->ActiveChannel.Evaluate(FrameTime, Value);
+		Constraint->SetActive(Value);
 		
 		if (UTickableTransformConstraint* TransformConstraint = Cast< UTickableTransformConstraint>(Constraint))
 		{
@@ -184,14 +177,24 @@ struct FEvaluateConstraintChannels
 
 			// this has to be done once the constraint initialized
 			TransformConstraint->ResolveBoundObjects(TargetInstance.GetSequenceID(), SharedPlaybackState);
+
+			if (Value && TransformableHandleUtils::SkipTicking())
+			{
+				if (UTransformableComponentHandle* ParentHandle = Cast<UTransformableComponentHandle>(TransformConstraint->ParentTRSHandle))
+				{
+					constexpr bool bRecursive = true;
+					USceneComponent* ParentComponent = TransformableHandleUtils::GetTarget<USceneComponent>(TransformConstraint->ParentTRSHandle);
+					TransformableHandleUtils::MarkComponentForEvaluation(ParentComponent, bRecursive);
+				}
+			}
 			
-			if (UTransformableComponentHandle* ComponentHandle = Cast<UTransformableComponentHandle>(TransformConstraint->ChildTRSHandle))
+			if (UTransformableComponentHandle* ChildHandle = Cast<UTransformableComponentHandle>(TransformConstraint->ChildTRSHandle))
 			{
 				//bound component may change so need to update constraint
-				ComponentHandle->Component = Cast<USceneComponent>(BoundObject);
+				ChildHandle->Component = Cast<USceneComponent>(BoundObject);
 				UMovieSceneConstraintSystem::FUpdateHandleForConstraint UpdateHandle;
 				UpdateHandle.Constraint = TransformConstraint;
-				UpdateHandle.TransformHandle = ComponentHandle;
+				UpdateHandle.TransformHandle = ChildHandle;
 				System->DynamicOffsets.Add(UpdateHandle);
 				TransformConstraint->EnsurePrimaryDependency(World);
 			}
@@ -204,7 +207,6 @@ struct FEvaluateConstraintChannels
 
 	UWorld* World;
 	FInstanceRegistry* InstanceRegistry;
-	FConstraintsManagerController* Controller;
 	UMovieSceneConstraintSystem* System;
 };
 

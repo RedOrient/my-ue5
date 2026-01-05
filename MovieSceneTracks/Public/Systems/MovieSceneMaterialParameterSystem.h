@@ -6,7 +6,7 @@
 #include "EntitySystem/MovieSceneEntityInstantiatorSystem.h"
 #include "EntitySystem/MovieSceneOverlappingEntityTracker.h"
 #include "Evaluation/PreAnimatedState/MovieScenePreAnimatedStateStorage.h"
-#include "MaterialTypes.h"
+#include "Materials/MaterialParameters.h"
 
 #include "MovieSceneMaterialParameterSystem.generated.h"
 

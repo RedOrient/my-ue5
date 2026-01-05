@@ -17,7 +17,7 @@ namespace MovieScene
 	struct FIntegerBlendResult
 	{
 		/** Cumulative sum of blend values pre-multiplied with each value's weight. */
-		int32 Total = 0;
+		int64 Total = 0;
 		/** Cumulative sum of weights. */
 		double Weight = 0.f;
 	};

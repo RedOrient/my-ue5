@@ -65,12 +65,12 @@ struct FMovieSceneCameraShakeSourceTriggerChannel : public FMovieSceneChannel
 
 	typedef FMovieSceneCameraShakeSourceTrigger CurveValueType;
 
-	FORCEINLINE TMovieSceneChannelData<FMovieSceneCameraShakeSourceTrigger> GetData()
+	inline TMovieSceneChannelData<FMovieSceneCameraShakeSourceTrigger> GetData()
 	{
 		return TMovieSceneChannelData<FMovieSceneCameraShakeSourceTrigger>(&KeyTimes, &KeyValues, this, &KeyHandles);
 	}
 
-	FORCEINLINE TMovieSceneChannelData<const FMovieSceneCameraShakeSourceTrigger> GetData() const
+	inline TMovieSceneChannelData<const FMovieSceneCameraShakeSourceTrigger> GetData() const
 	{
 		return TMovieSceneChannelData<const FMovieSceneCameraShakeSourceTrigger>(&KeyTimes, &KeyValues);
 	}

@@ -48,11 +48,11 @@ struct FEvaluateBaseByteValues
 
 struct FEvaluateBaseIntegerValues
 {
-	void ForEachEntity(FSourceIntegerChannel IntegerChannel, FFrameTime FrameTime, int32& OutResult)
+	void ForEachEntity(FSourceIntegerChannel IntegerChannel, FFrameTime FrameTime, int64& OutResult)
 	{
 		if (!IntegerChannel.Source->Evaluate(FrameTime, OutResult))
 		{
-			OutResult = MIN_int32;
+			OutResult = MIN_int64;
 		}
 	}
 };

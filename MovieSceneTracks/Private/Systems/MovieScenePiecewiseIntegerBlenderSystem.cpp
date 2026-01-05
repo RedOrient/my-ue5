@@ -27,8 +27,8 @@ struct FIntegerAccumulationTask
 		: AccumulationBuffer(*InAccumulationBuffer)
 	{}
 
-	/** Task entry point - iterates the allocation's headers and accumulates int32 results for any required components */
-	void ForEachAllocation(const FEntityAllocation* Allocation, TRead<FMovieSceneBlendChannelID> BlendIDs, TRead<int32> Integers, TReadOptional<double> EasingAndWeights) const
+	/** Task entry point - iterates the allocation's headers and accumulates int64 results for any required components */
+	void ForEachAllocation(const FEntityAllocation* Allocation, TRead<FMovieSceneBlendChannelID> BlendIDs, TRead<int64> Integers, TReadOptional<double> EasingAndWeights) const
 	{
 		static const FMovieSceneBlenderSystemID IntegerBlenderSystemID = UMovieSceneBlenderSystem::GetBlenderSystemID<UMovieScenePiecewiseIntegerBlenderSystem>();
 
@@ -45,7 +45,7 @@ struct FIntegerAccumulationTask
 				FIntegerBlendResult& Result = AccumulationBuffer[BlendID.ChannelID];
 
 				const double Weight = EasingAndWeights[Index];
-				Result.Total  += (int32)(Integers[Index] * Weight);
+				Result.Total  += (int64)(Integers[Index] * Weight);
 				Result.Weight += Weight;
 			}
 		}
@@ -86,7 +86,7 @@ struct FIntegerAdditiveFromBaseBlendTask
 		}
 	}
 
-	void ForEachAllocation(const FEntityAllocation* Allocation, TRead<FMovieSceneBlendChannelID> BlendIDs, TRead<int32> Integers, TRead<int32> BaseValues, TReadOptional<double> EasingAndWeights) const
+	void ForEachAllocation(const FEntityAllocation* Allocation, TRead<FMovieSceneBlendChannelID> BlendIDs, TRead<int64> Integers, TRead<int64> BaseValues, TReadOptional<double> EasingAndWeights) const
 	{
 		static const FMovieSceneBlenderSystemID IntegerBlenderSystemID = UMovieSceneBlenderSystem::GetBlenderSystemID<UMovieScenePiecewiseIntegerBlenderSystem>();
 
@@ -102,7 +102,7 @@ struct FIntegerAdditiveFromBaseBlendTask
 				FIntegerBlendResult& Result = AccumulationBuffer[BlendID.ChannelID];
 
 				const double Weight = EasingAndWeights[Index];
-				Result.Total  += (int32)((Integers[Index] - BaseValues[Index]) * Weight);
+				Result.Total  += (int64)((Integers[Index] - BaseValues[Index]) * Weight);
 				Result.Weight += Weight;
 			}
 		}
@@ -132,7 +132,7 @@ struct FIntegerCombineBlends
 		: AccumulationBuffers(*InAccumulationBuffers)
 	{}
 
-	void ForEachAllocation(FEntityAllocation* Allocation, TRead<FMovieSceneBlendChannelID> BlendIDs, TReadOptional<int32> InitialValues, TWrite<int32> IntegerResults) const
+	void ForEachAllocation(FEntityAllocation* Allocation, TRead<FMovieSceneBlendChannelID> BlendIDs, TReadOptional<int64> InitialValues, TWrite<int64> IntegerResults) const
 	{
 		static const FMovieSceneBlenderSystemID IntegerBlenderSystemID = UMovieSceneBlenderSystem::GetBlenderSystemID<UMovieScenePiecewiseIntegerBlenderSystem>();
 
@@ -154,7 +154,7 @@ struct FIntegerCombineBlends
 		}
 	}
 
-	void BlendResultsWithInitial(uint16 BlendID, const int32 InitialValue, int32& OutFinalBlendResult) const
+	void BlendResultsWithInitial(uint16 BlendID, const int64 InitialValue, int64& OutFinalBlendResult) const
 	{
 		FIntegerBlendResult AbsoluteResult = AccumulationBuffers.Absolute.Num() > 0 ? AccumulationBuffers.Absolute[BlendID] : FIntegerBlendResult();
 		FIntegerBlendResult RelativeResult = AccumulationBuffers.Relative.Num() > 0 ? AccumulationBuffers.Relative[BlendID] : FIntegerBlendResult();
@@ -178,12 +178,12 @@ struct FIntegerCombineBlends
 			// Note that "partial weighting" means strictly between 0 and 100%. At 100% and above, we don't need to do this thing with the initial
 			// value. At 0%, we have no absolute value (only a relative value) and we therefore don't want to include the initial value either.
 			const bool bInitialValueContributes = (0.f < AbsoluteResult.Weight && AbsoluteResult.Weight < 1.f);
-			const int32 AbsoluteBlendedValue = bInitialValueContributes ?
-				((int32)(InitialValue * (1.f - AbsoluteResult.Weight)) + AbsoluteResult.Total) :
+			const int64 AbsoluteBlendedValue = bInitialValueContributes ?
+				((int64)(InitialValue * (1.f - AbsoluteResult.Weight)) + AbsoluteResult.Total) :
 				AbsoluteResult.Total;
 			const double FinalTotalWeight = bInitialValueContributes ? (TotalWeight + (1.f - AbsoluteResult.Weight)) : TotalWeight;
 
-			const int32 Value = (int32)((AbsoluteBlendedValue + RelativeResult.Total) / FinalTotalWeight) + TotalAdditiveResult.Total;
+			const int64 Value = (int64)((AbsoluteBlendedValue + RelativeResult.Total) / FinalTotalWeight) + TotalAdditiveResult.Total;
 			OutFinalBlendResult = Value;
 		}
 		else if (TotalAdditiveResult.Weight != 0)
@@ -196,7 +196,7 @@ struct FIntegerCombineBlends
 		}
 	}
 
-	void BlendResults(uint16 BlendID, int32& OutFinalBlendResult) const
+	void BlendResults(uint16 BlendID, int64& OutFinalBlendResult) const
 	{
 		FIntegerBlendResult AbsoluteResult = AccumulationBuffers.Absolute.Num() > 0 ? AccumulationBuffers.Absolute[BlendID] : FIntegerBlendResult();
 		FIntegerBlendResult AdditiveResult = AccumulationBuffers.Additive.Num() > 0 ? AccumulationBuffers.Additive[BlendID] : FIntegerBlendResult();
@@ -209,7 +209,7 @@ struct FIntegerCombineBlends
 		const double TotalWeight = AbsoluteResult.Weight;
 		if (TotalWeight != 0)
 		{
-			const int32 Value = (int32)(AbsoluteResult.Total / AbsoluteResult.Weight) + AdditiveResult.Total + AdditiveFromBaseResult.Total;
+			const int64 Value = (int64)(AbsoluteResult.Total / AbsoluteResult.Weight) + AdditiveResult.Total + AdditiveFromBaseResult.Total;
 			OutFinalBlendResult = Value;
 		}
 	}
@@ -468,7 +468,7 @@ void UMovieScenePiecewiseIntegerBlenderSystem::ReinitializeAccumulationBuffers()
 	AccumulationBuffers.Reset();
 
 	// Find if we have any integer results to blend using any supported blend types.
-	const TComponentTypeID<int32> Component = BuiltInComponents->IntegerResult;
+	const TComponentTypeID<int64> Component = BuiltInComponents->IntegerResult;
 
 	const bool bHasAbsolutes         = Linker->EntityManager.Contains(FEntityComponentFilter().All({ GetBlenderTypeTag(), Component, BuiltInComponents->BlendChannelInput, BuiltInComponents->Tags.AbsoluteBlend }));
 	const bool bHasRelatives         = Linker->EntityManager.Contains(FEntityComponentFilter().All({ GetBlenderTypeTag(), Component, BuiltInComponents->BlendChannelInput, BuiltInComponents->Tags.RelativeBlend }));

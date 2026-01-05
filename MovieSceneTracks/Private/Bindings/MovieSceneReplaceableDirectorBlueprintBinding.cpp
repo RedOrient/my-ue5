@@ -13,6 +13,8 @@
 #include "Bindings/MovieSceneSpawnableActorBinding.h"
 #include "MovieSceneDynamicBindingInvoker.h"
 
+#include UE_INLINE_GENERATED_CPP_BY_NAME(MovieSceneReplaceableDirectorBlueprintBinding)
+
 #define LOCTEXT_NAMESPACE "MovieScene"
 
 #if WITH_EDITOR
@@ -88,7 +90,8 @@ FMovieSceneBindingResolveResult UMovieSceneReplaceableDirectorBlueprintBinding::
 {
 	FMovieSceneBindingResolveResult ResolveResult;
 	FMovieSceneDynamicBindingResolveResult DynamicResolveResult = FMovieSceneDynamicBindingInvoker::ResolveDynamicBinding(SharedPlaybackState, ResolveParams.Sequence, ResolveParams.SequenceID, ResolveParams.ObjectBindingID, DynamicBinding);
-	ResolveResult.Object = DynamicResolveResult.Object;
+	ResolveResult.Objects = DynamicResolveResult.Objects;
+	ResolveResult.Object = DynamicResolveResult.Object; // Object deprecated 5.7
 	return ResolveResult;
 }
 

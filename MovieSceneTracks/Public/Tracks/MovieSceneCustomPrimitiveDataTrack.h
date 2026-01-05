@@ -7,7 +7,7 @@
 #include "Sections/MovieSceneParameterSection.h"
 #include "MovieSceneNameableTrack.h"
 #include "EntitySystem/IMovieSceneEntityProvider.h"
-#include "MaterialTypes.h"
+#include "Materials/MaterialParameters.h"
 #include "MovieSceneMaterialTrack.h"
 #include "MovieSceneCustomPrimitiveDataTrack.generated.h"
 
@@ -64,25 +64,28 @@ public:
 	* @param CustomPrimitiveDataStartIndex The start index for the custom primitive data
 	* @param Time The time to add the new key.
 	* @param The value for the new key.
+	* @param DefaultInterpolation The default interpolation to use for thew new key.
 	*/
-	MOVIESCENETRACKS_API void AddScalarParameterKey(uint8 CustomPrimitiveDataStartIndex, FFrameNumber Position, float Value);
+	MOVIESCENETRACKS_API void AddScalarParameterKey(uint8 CustomPrimitiveDataStartIndex, FFrameNumber Time, float Value, EMovieSceneKeyInterpolation DefaultInterpolation = EMovieSceneKeyInterpolation::Auto);
 
 	/**
 	 * Adds a scalar parameter key to the track. 
-	* @param CustomPrimitiveDataStartIndex The start index for the custom primitive data
+	 * @param CustomPrimitiveDataStartIndex The start index for the custom primitive data
 	 * @param Time The time to add the new key.
 	 * @param RowIndex The preferred row index on which to look for sections.
 	 * @param The value for the new key.
+	 * @param DefaultInterpolation The default interpolation to use for thew new key.
 	 */
-	MOVIESCENETRACKS_API void AddScalarParameterKey(uint8 CustomPrimitiveDataStartIndex, FFrameNumber Position, int32 RowIndex, float Value);
+	MOVIESCENETRACKS_API void AddScalarParameterKey(uint8 CustomPrimitiveDataStartIndex, FFrameNumber Time, int32 RowIndex, float Value, EMovieSceneKeyInterpolation DefaultInterpolation = EMovieSceneKeyInterpolation::Auto);
 	
 	/**
 	 * Adds a Vector2D parameter key to the track.
 	 * @param CustomPrimitiveDataStartIndex The start index for the custom primitive data
 	 * @param Time The time to add the new key.
 	 * @param The value for the new key.
+	 * @param DefaultInterpolation The default interpolation to use for thew new key.
 	 */
-	MOVIESCENETRACKS_API void AddVector2DParameterKey(uint8 CustomPrimitiveDataStartIndex, FFrameNumber Position, FVector2D Value);
+	MOVIESCENETRACKS_API void AddVector2DParameterKey(uint8 CustomPrimitiveDataStartIndex, FFrameNumber Time, FVector2D Value, EMovieSceneKeyInterpolation DefaultInterpolation = EMovieSceneKeyInterpolation::Auto);
 
 	/**
 	 * Adds a Vector2D parameter key to the track.
@@ -90,16 +93,18 @@ public:
 	 * @param Time The time to add the new key.
 	 * @param RowIndex The preferred row index on which to look for sections.
 	 * @param The value for the new key.
+	 * @param DefaultInterpolation The default interpolation to use for thew new key.
 	 */
-	MOVIESCENETRACKS_API void AddVector2DParameterKey(uint8 CustomPrimitiveDataStartIndex, FFrameNumber Position, int32 RowIndex, FVector2D Value);
+	MOVIESCENETRACKS_API void AddVector2DParameterKey(uint8 CustomPrimitiveDataStartIndex, FFrameNumber Time, int32 RowIndex, FVector2D Value, EMovieSceneKeyInterpolation DefaultInterpolation = EMovieSceneKeyInterpolation::Auto);
 
 	/**
 	 * Adds a Vector parameter key to the track.
 	 * @param CustomPrimitiveDataStartIndex The start index for the custom primitive data
 	 * @param Time The time to add the new key.
 	 * @param The value for the new key.
+	 * @param DefaultInterpolation The default interpolation to use for thew new key.
 	 */
-	MOVIESCENETRACKS_API void AddVectorParameterKey(uint8 CustomPrimitiveDataStartIndex, FFrameNumber Position, FVector Value);
+	MOVIESCENETRACKS_API void AddVectorParameterKey(uint8 CustomPrimitiveDataStartIndex, FFrameNumber Time, FVector Value, EMovieSceneKeyInterpolation DefaultInterpolation = EMovieSceneKeyInterpolation::Auto);
 
 	/**
 	 * Adds a Vector parameter key to the track.
@@ -107,16 +112,18 @@ public:
 	 * @param Time The time to add the new key.
 	 * @param RowIndex The preferred row index on which to look for sections.
 	 * @param The value for the new key.
+	 * @param DefaultInterpolation The default interpolation to use for thew new key.
 	 */
-	MOVIESCENETRACKS_API void AddVectorParameterKey(uint8 CustomPrimitiveDataStartIndex, FFrameNumber Position, int32 RowIndex, FVector Value);
+	MOVIESCENETRACKS_API void AddVectorParameterKey(uint8 CustomPrimitiveDataStartIndex, FFrameNumber Time, int32 RowIndex, FVector Value, EMovieSceneKeyInterpolation DefaultInterpolation = EMovieSceneKeyInterpolation::Auto);
 
 	/**
 	* Adds a Vector2D parameter key to the track.
 	* @param CustomPrimitiveDataStartIndex The start index for the custom primitive data
 	* @param Time The time to add the new key.
 	* @param The value for the new key.
+	* @param DefaultInterpolation The default interpolation to use for thew new key.
 	*/
-	MOVIESCENETRACKS_API void AddColorParameterKey(uint8 CustomPrimitiveDataStartIndex, FFrameNumber Position, FLinearColor Value);
+	MOVIESCENETRACKS_API void AddColorParameterKey(uint8 CustomPrimitiveDataStartIndex, FFrameNumber Time, FLinearColor Value, EMovieSceneKeyInterpolation DefaultInterpolation = EMovieSceneKeyInterpolation::Auto);
 
 	/**
 	* Adds a Vector2D parameter key to the track.
@@ -124,8 +131,9 @@ public:
 	* @param Time The time to add the new key.
 	* @param RowIndex The preferred row index on which to look for sections.
 	* @param The value for the new key.
+	* @param DefaultInterpolation The default interpolation to use for thew new key.
 	*/
-	MOVIESCENETRACKS_API void AddColorParameterKey(uint8 CustomPrimitiveDataStartIndex, FFrameNumber Position, int32 RowIndex, FLinearColor Value);
+	MOVIESCENETRACKS_API void AddColorParameterKey(uint8 CustomPrimitiveDataStartIndex, FFrameNumber Time, int32 RowIndex, FLinearColor Value, EMovieSceneKeyInterpolation DefaultInterpolation = EMovieSceneKeyInterpolation::Auto);
 
 	/*~ IMovieSceneEntityProvider */
 	virtual void ImportEntityImpl(UMovieSceneEntitySystemLinker* EntityLinker, const FEntityImportParams& Params, FImportedEntity* OutImportedEntity) override;

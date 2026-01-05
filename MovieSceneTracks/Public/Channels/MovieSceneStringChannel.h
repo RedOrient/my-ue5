@@ -47,7 +47,7 @@ struct FMovieSceneStringChannel : public FMovieSceneChannel
 	 *
 	 * @return An object that is able to manipulate this channel's data
 	 */
-	FORCEINLINE TMovieSceneChannelData<FString> GetData()
+	inline TMovieSceneChannelData<FString> GetData()
 	{
 		return TMovieSceneChannelData<FString>(&Times, &Values, this, &KeyHandles);
 	}
@@ -57,7 +57,7 @@ struct FMovieSceneStringChannel : public FMovieSceneChannel
 	 *
 	 * @return An object that is able to interrogate this channel's data
 	 */
-	FORCEINLINE TMovieSceneChannelData<const FString> GetData() const
+	inline TMovieSceneChannelData<const FString> GetData() const
 	{
 		return TMovieSceneChannelData<const FString>(&Times, &Values);
 	}
@@ -65,7 +65,7 @@ struct FMovieSceneStringChannel : public FMovieSceneChannel
 	/**
      * Const access to this channel's times
      */
-	FORCEINLINE TArrayView<const FFrameNumber> GetTimes() const
+	inline TArrayView<const FFrameNumber> GetTimes() const
 	{
 		return Times;
 	}
@@ -73,7 +73,7 @@ struct FMovieSceneStringChannel : public FMovieSceneChannel
 	/**
 	 * Returns whether this channel has any values
 	 */
-	FORCEINLINE bool HasAnyData() const
+	inline bool HasAnyData() const
 	{
 		return Times.Num() != 0 || bHasDefaultValue == true;
 	}
@@ -91,7 +91,7 @@ struct FMovieSceneStringChannel : public FMovieSceneChannel
 	 * @param InTimes Times to add
 	 * @param InValues Values to add
 	 */
-	FORCEINLINE void AddKeys(const TArray<FFrameNumber>& InTimes, const TArray<FString>& InValues)
+	inline void AddKeys(const TArray<FFrameNumber>& InTimes, const TArray<FString>& InValues)
 	{
 		check(InTimes.Num() == InValues.Num());
 		Times.Append(InTimes);
@@ -124,7 +124,7 @@ public:
 	 *
 	 * @param InDefaultValue The desired default value
 	 */
-	FORCEINLINE void SetDefault(FString InDefaultValue)
+	inline void SetDefault(FString InDefaultValue)
 	{
 		bHasDefaultValue = true;
 		DefaultValue = InDefaultValue;
@@ -135,7 +135,7 @@ public:
 	 *
 	 * @return (Optional) The channel's default value
 	 */
-	FORCEINLINE TOptional<FString> GetDefault() const
+	inline TOptional<FString> GetDefault() const
 	{
 		return bHasDefaultValue ? TOptional<FString>(DefaultValue) : TOptional<FString>();
 	}
@@ -143,7 +143,7 @@ public:
 	/**
 	 * Remove this channel's default value causing the channel to have no effect where no keys are present
 	 */
-	FORCEINLINE void RemoveDefault()
+	inline void RemoveDefault()
 	{
 		bHasDefaultValue = false;
 	}

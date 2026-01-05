@@ -84,7 +84,7 @@ struct FMovieSceneActorReferenceData : public FMovieSceneChannel
 	 *
 	 * @return An object that is able to manipulate this channel's data
 	 */
-	FORCEINLINE TMovieSceneChannelData<FMovieSceneActorReferenceKey> GetData()
+	inline TMovieSceneChannelData<FMovieSceneActorReferenceKey> GetData()
 	{
 		return TMovieSceneChannelData<FMovieSceneActorReferenceKey>(&KeyTimes, &KeyValues, this, &KeyHandles);
 	}
@@ -94,7 +94,7 @@ struct FMovieSceneActorReferenceData : public FMovieSceneChannel
 	 *
 	 * @return An object that is able to interrogate this channel's data
 	 */
-	FORCEINLINE TMovieSceneChannelData<const FMovieSceneActorReferenceKey> GetData() const
+	inline TMovieSceneChannelData<const FMovieSceneActorReferenceKey> GetData() const
 	{
 		return TMovieSceneChannelData<const FMovieSceneActorReferenceKey>(&KeyTimes, &KeyValues);
 	}
@@ -133,7 +133,7 @@ public:
 	 *
 	 * @param InDefaultValue The desired default value
 	 */
-	FORCEINLINE void SetDefault(FMovieSceneActorReferenceKey InDefaultValue)
+	inline void SetDefault(FMovieSceneActorReferenceKey InDefaultValue)
 	{
 		DefaultValue = InDefaultValue;
 	}
@@ -143,7 +143,7 @@ public:
 	 *
 	 * @return (Optional) The channel's default value
 	 */
-	FORCEINLINE const FMovieSceneActorReferenceKey& GetDefault() const
+	inline const FMovieSceneActorReferenceKey& GetDefault() const
 	{
 		return DefaultValue;
 	}
@@ -218,4 +218,10 @@ private:
 inline bool EvaluateChannel(const FMovieSceneActorReferenceData* InChannel, FFrameTime InTime, FMovieSceneActorReferenceKey& OutValue)
 {
 	return InChannel->Evaluate(InTime, OutValue);
+}
+
+inline bool GetChannelDefault(const FMovieSceneActorReferenceData* Channel, FMovieSceneActorReferenceKey& OutDefaultValue)
+{
+	OutDefaultValue = Channel->GetDefault();
+	return true;
 }

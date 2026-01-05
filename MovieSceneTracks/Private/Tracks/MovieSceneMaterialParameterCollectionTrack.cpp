@@ -5,6 +5,7 @@
 
 #include "Evaluation/MovieSceneEvaluationField.h"
 #include "EntitySystem/BuiltInComponentTypes.h"
+#include "MovieSceneSequence.h"
 #include "MovieSceneTracksComponentTypes.h"
 #include "Sections/MovieSceneComponentMaterialParameterSection.h"
 
@@ -100,8 +101,29 @@ bool UMovieSceneMaterialParameterCollectionTrack::SupportsType(TSubclassOf<UMovi
 #if WITH_EDITORONLY_DATA
 FText UMovieSceneMaterialParameterCollectionTrack::GetDefaultDisplayName() const
 {
+	if (MPC)
+	{
+		return FText::FromString(MPC->GetName());
+	}
+
 	return LOCTEXT("DefaultTrackName", "Material Parameter Collection");
 }
+#endif
+
+#if WITH_EDITOR
+
+void UMovieSceneMaterialParameterCollectionTrack::PostLoad()
+{
+	if (MPC && GetDisplayName().EqualTo(FText::FromString(MPC->GetName())))
+	{
+		UMovieSceneSequence* Sequence = GetTypedOuter<UMovieSceneSequence>();
+		UE_LOG(LogMovieScene, Display, TEXT("Material Parameter Collection Track: Removing display name %s from %s because it is identical to the material name and track names are now derived from the material name"), *MPC->GetName(), *GetNameSafe(Sequence));
+		SetDisplayName(FText::GetEmpty());
+	}
+
+	Super::PostLoad();
+}
+
 #endif
 
 #undef LOCTEXT_NAMESPACE

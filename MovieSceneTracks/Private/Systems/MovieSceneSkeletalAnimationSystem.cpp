@@ -10,6 +10,7 @@
 #include "EntitySystem/MovieSceneEntitySystemLinker.h"
 #include "EntitySystem/MovieSceneEntitySystemRunner.h"
 #include "EntitySystem/MovieSceneEntitySystemTask.h"
+#include "EntitySystem/MovieSceneEntityGroupingSystem.h"
 #include "IMovieScenePlayer.h"
 #include "MovieScene.h"
 #include "MovieSceneExecutionToken.h"
@@ -91,7 +92,7 @@ UAnimSequencerInstance* GetAnimSequencerInstance(USkeletalMeshComponent* Skeleta
 struct FPreAnimatedSkeletalAnimationState
 {
 	EAnimationMode::Type AnimationMode;
-	TStrongObjectPtr<UAnimInstance> CachedAnimInstance;
+	TWeakObjectPtr<UAnimInstance> CachedAnimInstance;
 	FSkeletalMeshRestoreState SkeletalMeshRestoreState;
 };
 
@@ -108,7 +109,7 @@ struct FPreAnimatedSkeletalAnimationTraits : FBoundObjectPreAnimatedStateTraits
 		if (ensure(Component))
 		{
 			OutCachedValue.AnimationMode = Component->GetAnimationMode();
-			OutCachedValue.CachedAnimInstance.Reset(Component->AnimScriptInstance);
+			OutCachedValue.CachedAnimInstance = Component->AnimScriptInstance;
 			OutCachedValue.SkeletalMeshRestoreState.SaveState(Component);
 		}
 		return OutCachedValue;
@@ -141,18 +142,19 @@ struct FPreAnimatedSkeletalAnimationTraits : FBoundObjectPreAnimatedStateTraits
 			Component->SetAnimationMode(InOutCachedValue.AnimationMode);
 		}
 
-		UAnimInstance* PreviousAnimInstance = InOutCachedValue.CachedAnimInstance.Get();
-		if (PreviousAnimInstance && PreviousAnimInstance->GetSkelMeshComponent() == Component)
+		TStrongObjectPtr<UAnimInstance> PreviousAnimInstance = InOutCachedValue.CachedAnimInstance.Pin();
+		if (PreviousAnimInstance && IsValid(PreviousAnimInstance.Get()) && PreviousAnimInstance->GetSkelMeshComponent() == Component)
 		{
-			Component->AnimScriptInstance = PreviousAnimInstance;
+			Component->AnimScriptInstance = PreviousAnimInstance.Get();
 			InOutCachedValue.CachedAnimInstance.Reset();
 			if (Component->AnimScriptInstance && Component->GetSkeletalMeshAsset() && Component->AnimScriptInstance->CurrentSkeleton != Component->GetSkeletalMeshAsset()->GetSkeleton())
 			{
 				//the skeleton may have changed so need to recalc required bones as needed.
 				Component->AnimScriptInstance->CurrentSkeleton = Component->GetSkeletalMeshAsset()->GetSkeleton();
-				//Need at least RecalcRequiredbones and UpdateMorphTargetrs
-				Component->InitializeAnimScriptInstance(true);
 			}
+			// When Changing skeletons RecalcRequiredBones and UpdateMorphTargets need to be called, and InitializeAnimation needs to be called regardless, when changing script instances
+			// Playing montages does not work on uninitialized anim script instances with the EarlyOutMontageWhenUninitialized cvar enabled.
+			Component->InitializeAnimScriptInstance(true);
 		}
 
 		// Restore pose after unbinding to force the restored pose
@@ -283,7 +285,7 @@ void FBoneTransformFinalizeData::Register(USkeletalMeshComponent* InSkeleletalMe
 		MeshRelativeRootMotionTransform = InMeshRelativeRootMotionTransform;
 		InitialActorTransform = InInitialActorTransform;
 		// Also store the inverse relative rotation between SkeletalMeshComponent and the Actor if it's not the root component
-		if (SkeletalMeshComponent && SkeletalMeshComponent != SkeletalMeshComponent->GetOwner()->GetRootComponent())
+		if (SkeletalMeshComponent.IsValid() && SkeletalMeshComponent.Get() != SkeletalMeshComponent->GetOwner()->GetRootComponent())
 		{
 			InverseMeshToActorRotation = SkeletalMeshComponent->GetOwner()->GetRootComponent()->GetComponentTransform().GetRelativeTransformReverse(SkeletalMeshComponent->GetComponentTransform()).GetRotation();
 		}
@@ -316,7 +318,7 @@ void FBoneTransformFinalizeData::Register(USkeletalMeshComponent* InSkeleletalMe
 
 void FBoneTransformFinalizeData::Unregister()
 {
-	if (SkeletalMeshComponent)
+	if (SkeletalMeshComponent.IsValid())
 	{
 		SkeletalMeshComponent->UnregisterOnBoneTransformsFinalizedDelegate(OnBoneTransformsFinalizedHandle);
 	}
@@ -341,7 +343,7 @@ void FBoneTransformFinalizeData::BoneTransformFinalized()
 	}
 #endif
 
-	if (SkeletalMeshComponent && SwapRootBone != ESwapRootBone::SwapRootBone_None)
+	if (SkeletalMeshComponent.IsValid() && SwapRootBone != ESwapRootBone::SwapRootBone_None)
 	{
 		FTransform RelativeTransform = MeshRelativeRootMotionTransform;
 
@@ -376,7 +378,7 @@ void FBoneTransformFinalizeData::BoneTransformFinalized()
 void FSkeletalAnimationSystemData::ResetSkeletalAnimations()
 {
 	//clear out the delegates
-	for (TTuple<USkeletalMeshComponent*, FBoundObjectActiveSkeletalAnimations>& Pair : SkeletalAnimations)
+	for (TTuple<TWeakObjectPtr<USkeletalMeshComponent>, FBoundObjectActiveSkeletalAnimations>& Pair : SkeletalAnimations)
 	{
 		Pair.Value.BoneTransformFinalizeData.Unregister();
 	}
@@ -583,9 +585,12 @@ public:
 	}
 	void Run() const
 	{
-		for (const TTuple<USkeletalMeshComponent*, FBoundObjectActiveSkeletalAnimations>& Pair : SystemData->SkeletalAnimations)
+		for (const TTuple<TWeakObjectPtr<USkeletalMeshComponent>, FBoundObjectActiveSkeletalAnimations>& Pair : SystemData->SkeletalAnimations)
 		{
-			EvaluateSkeletalAnimations(Pair.Key, Pair.Value);
+			if (Pair.Key.IsValid())
+			{
+				EvaluateSkeletalAnimations(Pair.Key.Get(), Pair.Value);
+			}
 		}
 	}
 
@@ -612,6 +617,25 @@ private:
 			}
 			FCachePreAnimatedValueParams CacheParams;
 			PreAnimatedStorage->CachePreAnimatedValue(CacheParams, SkeletalMeshComponent);
+		}
+
+		// Check to see if we need to switch modes on the anim instance
+		if (Algo::AnyOf(InSkeletalAnimations.Animations, [&SkeletalMeshComponent](const FActiveSkeletalAnimation& ActiveAnim)
+			{
+				UAnimSequenceBase* Animation = ActiveAnim.AnimSection->GetPlaybackAnimation();
+				if (CanPlayAnimation(SkeletalMeshComponent, Animation))
+				{
+					const FMovieSceneSkeletalAnimationParams& AnimParams = ActiveAnim.AnimSection->Params;
+					TScriptInterface<ISequencerAnimationOverride> SequencerAnimOverride = ISequencerAnimationOverride::GetSequencerAnimOverride(SkeletalMeshComponent);
+					if (AnimParams.bForceCustomMode || (SequencerAnimOverride.GetObject() && ISequencerAnimationOverride::Execute_AllowsCinematicOverride(SequencerAnimOverride.GetObject())))
+					{
+						return true;
+					}
+				}
+				return false;
+			}))
+		{
+			SkeletalMeshComponent->SetAnimationMode(EAnimationMode::AnimationCustomMode);
 		}
 
 		// Setup any needed animation nodes for sequencer playback.
@@ -872,11 +896,6 @@ private:
 		{
 			return;
 		}
-		TScriptInterface<ISequencerAnimationOverride> SequencerAnimOverride = ISequencerAnimationOverride::GetSequencerAnimOverride(Params.SkeletalMeshComponent);
-		if (AnimParams.bForceCustomMode || (SequencerAnimOverride.GetObject() && ISequencerAnimationOverride::Execute_AllowsCinematicOverride(SequencerAnimOverride.GetObject())))
-		{
-			Params.SkeletalMeshComponent->SetAnimationMode(EAnimationMode::AnimationCustomMode);
-		}
 
 		UAnimSequencerInstance* SequencerInst = GetAnimSequencerInstance(Params.SkeletalMeshComponent);
 		if (SequencerInst)
@@ -969,11 +988,7 @@ private:
 		{
 			return;
 		}
-		TScriptInterface<ISequencerAnimationOverride> SequencerAnimOverride = ISequencerAnimationOverride::GetSequencerAnimOverride(Params.SkeletalMeshComponent);
-		if (AnimParams.bForceCustomMode || (SequencerAnimOverride.GetObject() && ISequencerAnimationOverride::Execute_AllowsCinematicOverride(SequencerAnimOverride.GetObject())))
-		{
-			Params.SkeletalMeshComponent->SetAnimationMode(EAnimationMode::AnimationCustomMode);
-		}
+
 		UAnimSequencerInstance* SequencerInst = GetAnimSequencerInstance(Params.SkeletalMeshComponent);
 		if (SequencerInst)
 		{
@@ -1330,6 +1345,27 @@ void UMovieSceneSkeletalAnimationSystem::OnRun(FSystemTaskPrerequisites& InPrere
 	.SetStat(GET_STATID(MovieSceneEval_EvaluateSkeletalAnimations))
 	.SetDesiredThread(Linker->EntityManager.GetGatherThread())
 	.Dispatch<FEvaluateSkeletalAnimations>(&Linker->EntityManager, EvalPrereqs, &Subsequents, Linker, &SystemData);
+}
+
+void UMovieSceneSkeletalAnimationSystem::OnLink()
+{
+	using namespace UE::MovieScene;
+	
+	UMovieSceneEntityGroupingSystem* GroupingSystem = Linker->LinkSystem<UMovieSceneEntityGroupingSystem>();
+
+	GroupingKey = GroupingSystem->AddGrouping(FAnimationGroupingPolicy(), FBuiltInComponentTypes::Get()->BoundObject, FMovieSceneTracksComponentTypes::Get()->SkeletalAnimation);
+}
+
+void UMovieSceneSkeletalAnimationSystem::OnUnlink()
+{
+	using namespace UE::MovieScene;
+	
+	UMovieSceneEntityGroupingSystem* GroupingSystem = Linker->FindSystem<UMovieSceneEntityGroupingSystem>();
+	if (ensure(GroupingSystem))
+	{
+		GroupingSystem->RemoveGrouping(GroupingKey);
+	}
+	GroupingKey = FEntityGroupingPolicyKey();
 }
 
 bool UMovieSceneSkeletalAnimationSystem::IsRelevantImpl(UMovieSceneEntitySystemLinker* InLinker) const

@@ -225,7 +225,7 @@ void UMovieSceneParameterSection::ReconstructChannelProxy()
 	ChannelProxy = MakeShared<FMovieSceneChannelProxy>(MoveTemp(Channels));
 }
 
-void UMovieSceneParameterSection::AddScalarParameterKey( FName InParameterName, FFrameNumber InTime, float InValue )
+void UMovieSceneParameterSection::AddScalarParameterKey( FName InParameterName, FFrameNumber InTime, float InValue, EMovieSceneKeyInterpolation DefaultInterpolation)
 {
 	FMovieSceneFloatChannel* ExistingChannel = nullptr;
 	for ( FScalarParameterNameAndCurve& ScalarParameterNameAndCurve : ScalarParameterNamesAndCurves )
@@ -244,7 +244,8 @@ void UMovieSceneParameterSection::AddScalarParameterKey( FName InParameterName, 
 		ReconstructChannelProxy();
 	}
 
-	ExistingChannel->GetData().UpdateOrAddKey(InTime, FMovieSceneFloatValue(InValue));
+	EMovieSceneKeyInterpolation Interpolation = GetInterpolationMode(ExistingChannel, InTime, DefaultInterpolation);
+	AddKeyToChannel(ExistingChannel, InTime, InValue, Interpolation);
 
 	if (TryModify())
 	{
@@ -280,7 +281,7 @@ void UMovieSceneParameterSection::AddBoolParameterKey(FName InParameterName, FFr
 }
 
 
-void UMovieSceneParameterSection::AddVector2DParameterKey(FName InParameterName, FFrameNumber InTime, FVector2D InValue)
+void UMovieSceneParameterSection::AddVector2DParameterKey(FName InParameterName, FFrameNumber InTime, FVector2D InValue, EMovieSceneKeyInterpolation DefaultInterpolation)
 {
 	FVector2DParameterNameAndCurves* ExistingCurves = nullptr;
 	for (FVector2DParameterNameAndCurves& VectorParameterNameAndCurve : Vector2DParameterNamesAndCurves)
@@ -299,8 +300,10 @@ void UMovieSceneParameterSection::AddVector2DParameterKey(FName InParameterName,
 		ReconstructChannelProxy();
 	}
 
-	ExistingCurves->XCurve.GetData().UpdateOrAddKey(InTime, FMovieSceneFloatValue(InValue.X));
-	ExistingCurves->YCurve.GetData().UpdateOrAddKey(InTime, FMovieSceneFloatValue(InValue.Y));
+	EMovieSceneKeyInterpolation XInterpolation = GetInterpolationMode(&ExistingCurves->XCurve, InTime, DefaultInterpolation);
+	AddKeyToChannel(&ExistingCurves->XCurve, InTime, InValue.X, XInterpolation);
+	EMovieSceneKeyInterpolation YInterpolation = GetInterpolationMode(&ExistingCurves->YCurve, InTime, DefaultInterpolation);
+	AddKeyToChannel(&ExistingCurves->YCurve, InTime, InValue.Y, YInterpolation);
 
 	if (TryModify())
 	{
@@ -308,7 +311,7 @@ void UMovieSceneParameterSection::AddVector2DParameterKey(FName InParameterName,
 	}
 }
 
-void UMovieSceneParameterSection::AddVectorParameterKey( FName InParameterName, FFrameNumber InTime, FVector InValue )
+void UMovieSceneParameterSection::AddVectorParameterKey( FName InParameterName, FFrameNumber InTime, FVector InValue, EMovieSceneKeyInterpolation DefaultInterpolation)
 {
 	FVectorParameterNameAndCurves* ExistingCurves = nullptr;
 	for ( FVectorParameterNameAndCurves& VectorParameterNameAndCurve : VectorParameterNamesAndCurves )
@@ -327,9 +330,12 @@ void UMovieSceneParameterSection::AddVectorParameterKey( FName InParameterName, 
 		ReconstructChannelProxy();
 	}
 
-	ExistingCurves->XCurve.GetData().UpdateOrAddKey(InTime, FMovieSceneFloatValue(InValue.X));
-	ExistingCurves->YCurve.GetData().UpdateOrAddKey(InTime, FMovieSceneFloatValue(InValue.Y));
-	ExistingCurves->ZCurve.GetData().UpdateOrAddKey(InTime, FMovieSceneFloatValue(InValue.Z));
+	EMovieSceneKeyInterpolation XInterpolation = GetInterpolationMode(&ExistingCurves->XCurve, InTime, DefaultInterpolation);
+	AddKeyToChannel(&ExistingCurves->XCurve, InTime, InValue.X, XInterpolation);
+	EMovieSceneKeyInterpolation YInterpolation = GetInterpolationMode(&ExistingCurves->YCurve, InTime, DefaultInterpolation);
+	AddKeyToChannel(&ExistingCurves->YCurve, InTime, InValue.Y, YInterpolation);
+	EMovieSceneKeyInterpolation ZInterpolation = GetInterpolationMode(&ExistingCurves->ZCurve, InTime, DefaultInterpolation);
+	AddKeyToChannel(&ExistingCurves->ZCurve, InTime, InValue.Z, ZInterpolation);
 
 	if (TryModify())
 	{
@@ -337,7 +343,7 @@ void UMovieSceneParameterSection::AddVectorParameterKey( FName InParameterName, 
 	}
 }
 
-void UMovieSceneParameterSection::AddColorParameterKey( FName InParameterName, FFrameNumber InTime, FLinearColor InValue )
+void UMovieSceneParameterSection::AddColorParameterKey( FName InParameterName, FFrameNumber InTime, FLinearColor InValue, EMovieSceneKeyInterpolation DefaultInterpolation)
 {
 	FColorParameterNameAndCurves* ExistingCurves = nullptr;
 	for ( FColorParameterNameAndCurves& ColorParameterNameAndCurve : ColorParameterNamesAndCurves )
@@ -356,10 +362,14 @@ void UMovieSceneParameterSection::AddColorParameterKey( FName InParameterName, F
 		ReconstructChannelProxy();
 	}
 	
-	ExistingCurves->RedCurve.GetData().UpdateOrAddKey(InTime, FMovieSceneFloatValue(InValue.R));
-	ExistingCurves->GreenCurve.GetData().UpdateOrAddKey(InTime, FMovieSceneFloatValue(InValue.G));
-	ExistingCurves->BlueCurve.GetData().UpdateOrAddKey(InTime, FMovieSceneFloatValue(InValue.B));
-	ExistingCurves->AlphaCurve.GetData().UpdateOrAddKey(InTime, FMovieSceneFloatValue(InValue.A));
+	EMovieSceneKeyInterpolation RedInterpolation = GetInterpolationMode(&ExistingCurves->RedCurve, InTime, DefaultInterpolation);
+	AddKeyToChannel(&ExistingCurves->RedCurve, InTime, InValue.R, RedInterpolation);
+	EMovieSceneKeyInterpolation GreenInterpolation = GetInterpolationMode(&ExistingCurves->GreenCurve, InTime, DefaultInterpolation);
+	AddKeyToChannel(&ExistingCurves->GreenCurve, InTime, InValue.G, GreenInterpolation);
+	EMovieSceneKeyInterpolation BlueInterpolation = GetInterpolationMode(&ExistingCurves->BlueCurve, InTime, DefaultInterpolation);
+	AddKeyToChannel(&ExistingCurves->BlueCurve, InTime, InValue.B, BlueInterpolation);
+	EMovieSceneKeyInterpolation AlphaInterpolation = GetInterpolationMode(&ExistingCurves->AlphaCurve, InTime, DefaultInterpolation);
+	AddKeyToChannel(&ExistingCurves->AlphaCurve, InTime, InValue.A, AlphaInterpolation);
 
 	if (TryModify())
 	{
@@ -367,7 +377,7 @@ void UMovieSceneParameterSection::AddColorParameterKey( FName InParameterName, F
 	}
 }
 
-void UMovieSceneParameterSection::AddTransformParameterKey(FName InParameterName, FFrameNumber InTime, const FTransform& InValue)
+void UMovieSceneParameterSection::AddTransformParameterKey(FName InParameterName, FFrameNumber InTime, const FTransform& InValue, EMovieSceneKeyInterpolation DefaultInterpolation)
 {
 	FTransformParameterNameAndCurves* ExistingCurves = nullptr;
 	for (FTransformParameterNameAndCurves& TransformParameterNamesAndCurve : TransformParameterNamesAndCurves)
@@ -389,6 +399,8 @@ void UMovieSceneParameterSection::AddTransformParameterKey(FName InParameterName
 	FRotator Rotator = InValue.GetRotation().Rotator();
 	FVector Scale = InValue.GetScale3D();
 
+
+	////todo
 	ExistingCurves->Translation[0].GetData().UpdateOrAddKey(InTime, FMovieSceneFloatValue(Translation[0]));
 	ExistingCurves->Translation[1].GetData().UpdateOrAddKey(InTime, FMovieSceneFloatValue(Translation[1]));
 	ExistingCurves->Translation[2].GetData().UpdateOrAddKey(InTime, FMovieSceneFloatValue(Translation[2]));

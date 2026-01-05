@@ -42,7 +42,7 @@ namespace UE::MovieScene
 
 #if WITH_EDITOR
 		/** While in editor, we can scrub the audio in the audio component. */
-		TStrongObjectPtr<UScrubbedSound> ScrubbedSound;
+		TObjectPtr<UScrubbedSound> ScrubbedSound;
 #endif
 
 		/** Volume multiplier to use this frame */
@@ -119,6 +119,9 @@ public:
 	 * Reset shared accumulation data required every evaluation frame
 	 */
 	void ResetSharedData();
+
+	// To expose the class to GC //
+	static void AddReferencedObjects(UObject* InThis, FReferenceCollector& Collector);
 
 private:
 

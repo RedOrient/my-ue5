@@ -4,6 +4,8 @@
 #include "CoreMinimal.h"
 #include "Scalability.h"
 
+#include UE_INLINE_GENERATED_CPP_BY_NAME(MovieSceneScalabilityCondition)
+
 bool UMovieSceneScalabilityCondition::EvaluateConditionInternal(FGuid BindingGuid, FMovieSceneSequenceID SequenceID, TSharedRef<const UE::MovieScene::FSharedPlaybackState> SharedPlaybackState) const
 {
 	using namespace Scalability;

@@ -238,8 +238,13 @@ public:
 		FCameraCutEditorHandler::CachePreAnimatedValue(Linker, SequenceInstance);
 #endif
 
+		// We do a straight cut if we have jumped in time and we either (1) always cut on loops or (2) it's not a loop.
+		UMovieSceneSequence* RootSequence = SequenceInstance.GetSharedPlaybackState()->GetRootSequence();
+		const bool bDoLoopCuts = RootSequence ? EnumHasAnyFlags(RootSequence->GetFlags(), EMovieSceneSequenceFlags::LoopCuts) : false;
+		const bool bIsJumpCut = Context.HasJumped() && (bDoLoopCuts || !Context.HasLooped());
+
 		FMovieSceneCameraCutParams CameraCutParams;
-		CameraCutParams.bJumpCut = Context.HasJumped();
+		CameraCutParams.bJumpCut = bIsJumpCut;
 		CameraCutParams.BlendTime = Params.EaseIn.RootBlendTime;
 		CameraCutParams.BlendType = Params.EaseIn.BlendType;
 		CameraCutParams.bLockPreviousCamera = Params.bLockPreviousCamera;

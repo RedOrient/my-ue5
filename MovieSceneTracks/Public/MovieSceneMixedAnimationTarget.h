@@ -19,7 +19,7 @@ struct FMovieSceneMixedAnimationTarget
 
 	virtual ~FMovieSceneMixedAnimationTarget() {}
 
-	FORCEINLINE friend uint32 GetTypeHash(const FMovieSceneMixedAnimationTarget& Target)
+	inline friend uint32 GetTypeHash(const FMovieSceneMixedAnimationTarget& Target)
 	{
 		return GetTypeHash(FMovieSceneMixedAnimationTarget::StaticStruct());
 	}

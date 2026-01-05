@@ -164,7 +164,7 @@ struct FGatherAudioInputs
 				double, double, double,
 				double, double, double,
 				double, double, double,
-				FString, int32, bool>
+				FString, int64, bool>
 			AudioInputResults) const
 	{
 		FAudioInputsBySectionKey& AudioInputsBySectionKey = AudioSystem->AudioInputsBySectionKey;
@@ -182,7 +182,7 @@ struct FGatherAudioInputs
 			DoubleResults[8] = AudioInputResults.Get<8>();
 		}
 		const FString* StringResults = AudioInputResults.Get<9>();
-		const int32* IntegerResults = AudioInputResults.Get<10>();
+		const int64* IntegerResults = AudioInputResults.Get<10>();
 		const bool* BoolResults = AudioInputResults.Get<11>();
 
 		for (int32 Index = 0; Index < Allocation->Num(); ++Index)
@@ -979,6 +979,25 @@ void UMovieSceneAudioSystem::ResetSharedData()
 	}
 }
 
+void UMovieSceneAudioSystem::AddReferencedObjects(UObject* InThis, FReferenceCollector& Collector)
+{
+	Super::AddReferencedObjects(InThis, Collector);
+#if WITH_EDITOR
+	UMovieSceneAudioSystem* This = CastChecked<UMovieSceneAudioSystem>(InThis);
+	for (auto& ActorPair : This->AudioComponentsByActorKey)
+	{
+		for (auto& SectionPair : ActorPair.Value)
+		{
+			FAudioComponentEvaluationData& EvalData = SectionPair.Value;
+			if (EvalData.ScrubbedSound)
+			{
+				Collector.AddReferencedObject(EvalData.ScrubbedSound);
+			}
+		}
+	}
+#endif
+}
+
 void UMovieSceneAudioSystem::OnSchedulePersistentTasks(UE::MovieScene::IEntitySystemScheduler* TaskScheduler)
 {
 	if (!GEngine || !GEngine->UseSound())
@@ -1207,7 +1226,7 @@ UMovieSceneAudioSystem::FAudioComponentEvaluationData* UMovieSceneAudioSystem::A
 		else
 		{
 			ScrubbedSound->SetFlags(RF_Transient);
-			ExistingData->ScrubbedSound = TStrongObjectPtr<UScrubbedSound>(ScrubbedSound);
+			ExistingData->ScrubbedSound = TObjectPtr<UScrubbedSound>(ScrubbedSound);
 		}
 #endif // WITH_EDITOR
 
@@ -1259,7 +1278,7 @@ UMovieSceneAudioSystem::FAudioComponentEvaluationData* UMovieSceneAudioSystem::A
 		else
 		{
 			ScrubbedSound->SetFlags(RF_Transient);
-			ExistingData->ScrubbedSound = TStrongObjectPtr<UScrubbedSound>(ScrubbedSound);
+			ExistingData->ScrubbedSound = TObjectPtr<UScrubbedSound>(ScrubbedSound);
 		}
 #endif // WITH_EDITOR
 	}

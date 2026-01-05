@@ -6,7 +6,7 @@
 #include "MovieSceneTracksComponentTypes.h"
 #include "EntitySystem/BuiltInComponentTypes.h"
 #include "SceneTypes.h"
-#include "MaterialTypes.h"
+#include "Materials/MaterialParameters.h"
 #include "Materials/MaterialInterface.h"
 #include "Materials/MaterialFunctionInterface.h"
 #include "Materials/MaterialLayersFunctions.h"

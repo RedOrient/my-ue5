@@ -35,7 +35,7 @@ struct FCameraShakePreviewerAddParams
 /**
  * A class that owns a gameplay camera shake manager, so that we can us it to preview shakes in editor.
  */
-class FCameraShakePreviewer : public FGCObject
+class FCameraShakePreviewer : public FGCObject, public TSharedFromThis<FCameraShakePreviewer>
 {
 public:
 	using FViewportFilter = TFunctionRef<bool(FLevelEditorViewportClient*)>;

@@ -75,7 +75,7 @@ protected:
 
 	/* Override to provide Actor class to be spawned*/
 	// TODO: Make UFUNCTION
-	MOVIESCENETRACKS_API virtual TSubclassOf<AActor> GetActorClass() const PURE_VIRTUAL(UMovieSceneSpawnableActorBindingBase::GetActorClass, return AActor::StaticClass(););
+	virtual TSubclassOf<AActor> GetActorClass() const PURE_VIRTUAL(UMovieSceneSpawnableActorBindingBase::GetActorClass, return AActor::StaticClass(););
 
 	/* Optionally override to provide an Actor template to use during Spawn */
 	virtual AActor* GetActorTemplate() const { return nullptr; }
@@ -140,6 +140,8 @@ public:
 #endif
 
 protected:
+	/* UObject overrides */
+	MOVIESCENETRACKS_API virtual void PostDuplicate(EDuplicateMode::Type DuplicateMode) override;
 
 	/* MovieSceneSpawnableBindingBase overrides*/
 	MOVIESCENETRACKS_API UWorld* GetWorldContext(TSharedRef<const UE::MovieScene::FSharedPlaybackState> SharedPlaybackState) const override;

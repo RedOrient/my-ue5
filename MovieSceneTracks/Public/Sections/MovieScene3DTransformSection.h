@@ -42,7 +42,7 @@ struct FMovieScene3DLocationKeyStruct
 	GENERATED_BODY()
 
 	/** The key's translation value. */
-	UPROPERTY(EditAnywhere, Category=Key)
+	UPROPERTY(EditAnywhere, Category=Key, meta=(Spatial))
 	FVector Location = FVector::ZeroVector;
 
 	/** The key's time. */
@@ -89,8 +89,8 @@ struct FMovieScene3DScaleKeyStruct
 	GENERATED_BODY()
 
 	/** The key's scale value. */
-	UPROPERTY(EditAnywhere, Category=Key)
-	FVector3f Scale = FVector3f::OneVector;
+	UPROPERTY(EditAnywhere, Category=Key, meta=(Spatial))
+	FVector Scale = FVector::OneVector;
 
 	/** The key's time. */
 	UPROPERTY(EditAnywhere, Category=Key)
@@ -113,7 +113,7 @@ struct FMovieScene3DTransformKeyStruct
 	GENERATED_BODY()
 
 	/** The key's translation value. */
-	UPROPERTY(EditAnywhere, Category=Key)
+	UPROPERTY(EditAnywhere, Category=Key, meta=(Spatial))
 	FVector Location = FVector::ZeroVector;
 
 	/** The key's rotation value. */
@@ -121,8 +121,8 @@ struct FMovieScene3DTransformKeyStruct
 	FRotator Rotation = FRotator::ZeroRotator;
 
 	/** The key's scale value. */
-	UPROPERTY(EditAnywhere, Category=Key)
-	FVector3f Scale = FVector3f::OneVector;
+	UPROPERTY(EditAnywhere, Category=Key, meta=(Spatial))
+	FVector Scale = FVector::OneVector;
 
 	/** The key's time. */
 	UPROPERTY(EditAnywhere, Category=Key)

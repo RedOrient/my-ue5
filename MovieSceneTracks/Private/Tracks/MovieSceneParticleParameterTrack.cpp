@@ -76,7 +76,7 @@ FText UMovieSceneParticleParameterTrack::GetDefaultDisplayName() const
 #endif
 
 
-void UMovieSceneParticleParameterTrack::AddScalarParameterKey( FName ParameterName, FFrameNumber Time, float Value )
+void UMovieSceneParticleParameterTrack::AddScalarParameterKey( FName ParameterName, FFrameNumber Time, float Value, EMovieSceneKeyInterpolation DefaultInterpolation)
 {
 	UMovieSceneParameterSection* NearestSection = Cast<UMovieSceneParameterSection>(MovieSceneHelpers::FindNearestSectionAtTime(Sections, Time));
 	if ( NearestSection == nullptr )
@@ -90,10 +90,10 @@ void UMovieSceneParticleParameterTrack::AddScalarParameterKey( FName ParameterNa
 
 		Sections.Add( NearestSection );
 	}
-	NearestSection->AddScalarParameterKey(ParameterName, Time, Value);
+	NearestSection->AddScalarParameterKey(ParameterName, Time, Value, DefaultInterpolation);
 }
 
-void UMovieSceneParticleParameterTrack::AddVectorParameterKey( FName ParameterName, FFrameNumber Time, FVector Value )
+void UMovieSceneParticleParameterTrack::AddVectorParameterKey( FName ParameterName, FFrameNumber Time, FVector Value, EMovieSceneKeyInterpolation DefaultInterpolation)
 {
 	UMovieSceneParameterSection* NearestSection = Cast<UMovieSceneParameterSection>( MovieSceneHelpers::FindNearestSectionAtTime( Sections, Time ) );
 	if ( NearestSection == nullptr )
@@ -107,10 +107,10 @@ void UMovieSceneParticleParameterTrack::AddVectorParameterKey( FName ParameterNa
 
 		Sections.Add( NearestSection );
 	}
-	NearestSection->AddVectorParameterKey( ParameterName, Time, Value );
+	NearestSection->AddVectorParameterKey( ParameterName, Time, Value, DefaultInterpolation);
 }
 
-void UMovieSceneParticleParameterTrack::AddColorParameterKey( FName ParameterName, FFrameNumber Time, FLinearColor Value )
+void UMovieSceneParticleParameterTrack::AddColorParameterKey( FName ParameterName, FFrameNumber Time, FLinearColor Value, EMovieSceneKeyInterpolation DefaultInterpolation)
 {
 	UMovieSceneParameterSection* NearestSection = Cast<UMovieSceneParameterSection>( MovieSceneHelpers::FindNearestSectionAtTime( Sections, Time ) );
 	if ( NearestSection == nullptr )
@@ -124,7 +124,7 @@ void UMovieSceneParticleParameterTrack::AddColorParameterKey( FName ParameterNam
 
 		Sections.Add( NearestSection );
 	}
-	NearestSection->AddColorParameterKey( ParameterName, Time, Value );
+	NearestSection->AddColorParameterKey( ParameterName, Time, Value, DefaultInterpolation);
 }
 #undef LOCTEXT_NAMESPACE
 

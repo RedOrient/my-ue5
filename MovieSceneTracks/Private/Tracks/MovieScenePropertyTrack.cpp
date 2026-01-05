@@ -10,9 +10,12 @@
 #include "MovieSceneTracksComponentTypes.h"
 #include "PropertyPathHelpers.h"
 #include "Systems/MovieScenePiecewiseBoolBlenderSystem.h"
+#include "ObjectEditorUtils.h"
 #include "UObject/Field.h"
 
 #include UE_INLINE_GENERATED_CPP_BY_NAME(MovieScenePropertyTrack)
+
+#define LOCTEXT_NAMESPACE "MovieScenePropertyTrack"
 
 UMovieScenePropertyTrack::UMovieScenePropertyTrack(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
@@ -82,19 +85,10 @@ FText UMovieScenePropertyTrack::GetDisplayNameToolTipText(const FMovieSceneLabel
 		FTrackInstancePropertyBindings InstancePropertyBinding(GetPropertyName(), GetPropertyPath().ToString());
 		if (FProperty* BoundProperty = InstancePropertyBinding.GetProperty(*BoundObject))
 		{
-			FString PropertyName = BoundProperty->GetMetaData(TEXT("DisplayName"));
-			if (PropertyName.IsEmpty())
-			{
-				PropertyName = BoundProperty->GetName();
-			}
-
-			FString CategoryName = BoundProperty->GetMetaData(TEXT("Category")).Replace(TEXT("|"), TEXT(" \u00BB "));
-			if (!CategoryName.IsEmpty())
-			{
-				CategoryName.Append(TEXT(" \u00BB "));
-			}
-
-			return FText::FromString(FString::Printf(TEXT("%s%s\n(Path: %s)"), *CategoryName, *PropertyName, *InstancePropertyBinding.GetPropertyPath()));
+			return FText::Format(LOCTEXT("DisplayNameTooltipFormat", "{0} \u00BB {1}\n(Path: {2})"),
+				FObjectEditorUtils::GetCategoryText(BoundProperty),
+				BoundProperty->GetDisplayNameText(),
+				FText::FromString(InstancePropertyBinding.GetPropertyPath()));
 		}
 	}
 	
@@ -382,6 +376,59 @@ void FMovieScenePropertyTrackEntityImportHelper::PopulateEvaluationField(UMovieS
 {
 	using namespace UE::MovieScene;
 
+	// Parse the property path, and get the expected object type for the property binding, if any.
+	TArray<FString> PropertyPathSegments;
+#if WITH_EDITORONLY_DATA
+	const UClass* ParentBoundClass = nullptr;
+#endif
+
+	UMovieScenePropertyTrack* PropertyTrack = Section.GetTypedOuter<UMovieScenePropertyTrack>();
+	UMovieScene* MovieScene = Section.GetTypedOuter<UMovieScene>();
+	if (PropertyTrack && MovieScene)
+	{
+		const FMovieScenePropertyBinding& PropertyBinding = PropertyTrack->GetPropertyBinding();
+		PropertyBinding.PropertyPath.ToString().ParseIntoArray(PropertyPathSegments, TEXT("."), true);
+
+#if WITH_EDITORONLY_DATA
+		FGuid ParentBindingGuid = OutFieldBuilder->GetSharedMetaData().ObjectBindingID;
+		if (ParentBindingGuid.IsValid())
+		{
+			if (const FMovieScenePossessable* ParentPossessable = MovieScene->FindPossessable(ParentBindingGuid))
+			{
+				ParentBoundClass = ParentPossessable->GetPossessedObjectClass();
+			}
+			else if (const FMovieSceneSpawnable* ParentSpawnable = MovieScene->FindSpawnable(ParentBindingGuid))
+			{
+				ParentBoundClass = ParentSpawnable->GetObjectTemplate() ? 
+					ParentSpawnable->GetObjectTemplate()->GetClass() : nullptr;
+			}
+		}
+#endif
+	}
+
+	FMovieSceneEvaluationFieldEntityMetaData MainMetaData(InMetaData);
+
+#if WITH_EDITORONLY_DATA
+
+	// Check if this section is animating a property with a notify function. If so, add that information to the metadata.
+	if (ParentBoundClass && PropertyPathSegments.Num() > 0)
+	{
+		if (FProperty* HeadProperty = ParentBoundClass->FindPropertyByName(*PropertyPathSegments[0]))
+		{
+			const FString InterpNotifyMetaData = HeadProperty->GetMetaData(TEXT("InterpNotify"));
+			if (!InterpNotifyMetaData.IsEmpty())
+			{
+				MainMetaData.NotifyFunctionName = FName(InterpNotifyMetaData);
+			}
+		}
+	}
+
+#else
+
+	// No support for notify functions for sequences dynamically built at runtime.
+
+#endif  // WITH_EDITORONLY_DATA
+
 	int32 NumOverridenChannels = 0;
 	IMovieSceneChannelOverrideProvider* RegistryProvider = Cast<IMovieSceneChannelOverrideProvider>(&Section);
 	if (RegistryProvider)
@@ -389,7 +436,7 @@ void FMovieScenePropertyTrackEntityImportHelper::PopulateEvaluationField(UMovieS
 		if (UMovieSceneSectionChannelOverrideRegistry* OverrideRegistry = RegistryProvider->GetChannelOverrideRegistry(false))
 		{
 			NumOverridenChannels = OverrideRegistry->NumChannels();
-			OverrideRegistry->PopulateEvaluationFieldImpl(EffectiveRange, InMetaData, OutFieldBuilder, Section);
+			OverrideRegistry->PopulateEvaluationFieldImpl(EffectiveRange, MainMetaData, OutFieldBuilder, Section);
 		}
 	}
 
@@ -398,22 +445,14 @@ void FMovieScenePropertyTrackEntityImportHelper::PopulateEvaluationField(UMovieS
 	{
 		// Add the default entity for this section.
 		const int32 EntityIndex = OutFieldBuilder->FindOrAddEntity(&Section, SectionPropertyValueImportingID);
-		const int32 MetaDataIndex = OutFieldBuilder->AddMetaData(InMetaData);
+		const int32 MetaDataIndex = OutFieldBuilder->AddMetaData(MainMetaData);
 		OutFieldBuilder->AddPersistentEntity(EffectiveRange, EntityIndex, MetaDataIndex);
 	}
 
 	// Check if this section is animating a property with an edit-condition. If so, we need to also animate a boolean toggle
 	// that will be set to true while the main property is animated.
-	UMovieScenePropertyTrack* PropertyTrack = Section.GetTypedOuter<UMovieScenePropertyTrack>();
-	UMovieScene* MovieScene = Section.GetTypedOuter<UMovieScene>();
-	if (PropertyTrack && MovieScene)
+	if (PropertyPathSegments.Num() > 0)
 	{
-		const FMovieScenePropertyBinding& PropertyBinding = PropertyTrack->GetPropertyBinding();
-
-		TArray<FString> PropertyPathSegments;
-		PropertyBinding.PropertyPath.ToString().ParseIntoArray(PropertyPathSegments, TEXT("."), true);
-		FCachedPropertyPath PropertyPath(PropertyPathSegments);
-
 		// Prepare the edit condition toggle property path by taking the beginning part of the
 		// main property path. We'll append the toggle name to it. This is necessary for nested stuff, like:
 		//
@@ -430,36 +469,21 @@ void FMovieScenePropertyTrackEntityImportHelper::PopulateEvaluationField(UMovieS
 
 #if WITH_EDITORONLY_DATA
 
-		FGuid ParentBindingGuid;
-		const bool bFoundParentBinding = MovieScene->FindTrackBinding(*PropertyTrack, ParentBindingGuid);
-		if (bFoundParentBinding && ParentBindingGuid.IsValid())
+		if (ParentBoundClass)
 		{
-			const UClass* ParentBoundClass = nullptr;
-			if (const FMovieScenePossessable* ParentPossessable = MovieScene->FindPossessable(ParentBindingGuid))
+			FCachedPropertyPath PropertyPath(PropertyPathSegments);
+			PropertyPath.Resolve(ParentBoundClass->GetDefaultObject());
+			if (const FProperty* LeafProperty = PropertyPath.GetFProperty())
 			{
-				ParentBoundClass = ParentPossessable->GetPossessedObjectClass();
-			}
-			else if (const FMovieSceneSpawnable* ParentSpawnable = MovieScene->FindSpawnable(ParentBindingGuid))
-			{
-				ParentBoundClass = ParentSpawnable->GetObjectTemplate() ? 
-					ParentSpawnable->GetObjectTemplate()->GetClass() : nullptr;
-			}
-
-			if (ParentBoundClass) // This line was previously an ensure() but we removed it since that would fail cooks
-			{
-				PropertyPath.Resolve(ParentBoundClass->GetDefaultObject());
-				if (const FProperty* LeafProperty = PropertyPath.GetFProperty())
+				const FString EditConditionPropertyName = LeafProperty->GetMetaData("EditCondition");
+				if (!EditConditionPropertyName.IsEmpty())
 				{
-					const FString EditConditionPropertyName = LeafProperty->GetMetaData("EditCondition");
-					if (!EditConditionPropertyName.IsEmpty())
+					if (!EditConditionPropertyPath.IsEmpty())
 					{
-						if (!EditConditionPropertyPath.IsEmpty())
-						{
-							EditConditionPropertyPath.Append(".");
-						}
-						EditConditionPropertyPath.Append(EditConditionPropertyName);
-						bHasEditCondition = true;
+						EditConditionPropertyPath.Append(".");
 					}
+					EditConditionPropertyPath.Append(EditConditionPropertyName);
+					bHasEditCondition = true;
 				}
 			}
 		}
@@ -474,7 +498,6 @@ void FMovieScenePropertyTrackEntityImportHelper::PopulateEvaluationField(UMovieS
 			FString EditConditionPropertyName = PropertyPathSegments[PropertyPathSegments.Num() - 1];
 			EditConditionPropertyName.InsertAt(0, TEXT("bOverride_"));
 
-
 			if (!EditConditionPropertyPath.IsEmpty())
 			{
 				EditConditionPropertyPath.Append(".");
@@ -483,7 +506,7 @@ void FMovieScenePropertyTrackEntityImportHelper::PopulateEvaluationField(UMovieS
 			bHasEditCondition = true;
 		}
 
-#endif
+#endif  // WITH_EDITORONLY_DATA
 
 		if (bHasEditCondition)
 		{
@@ -560,3 +583,4 @@ FName FMovieScenePropertyTrackEntityImportHelper::SanitizeBoolPropertyName(FName
 	return FName(*PropertyVarName);
 }
 
+#undef LOCTEXT_NAMESPACE

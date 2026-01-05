@@ -69,7 +69,7 @@ FPreAnimatedCameraCutState FPreAnimatedCameraCutTraits::CachePreAnimatedValue(
 		const APlayerController* PC = GetPlaybackController(PlaybackContext);
 
 		// Save previous view target.
-		APlayerCameraManager* CameraManager = (PC != nullptr) ? PC->PlayerCameraManager : nullptr;
+		APlayerCameraManager* CameraManager = (PC != nullptr) ? PC->PlayerCameraManager.Get() : nullptr;
 		AActor* ViewTarget = CameraManager ? CameraManager->GetViewTarget() : nullptr;
 
 		// Save previous aspect ratio axis constraint.
@@ -106,7 +106,7 @@ void FPreAnimatedCameraCutTraits::RestorePreAnimatedValue(
 		}
 	}
 
-	APlayerCameraManager* CameraManager = (PC != nullptr) ? PC->PlayerCameraManager : nullptr;
+	APlayerCameraManager* CameraManager = (PC != nullptr) ? PC->PlayerCameraManager.Get() : nullptr;
 
 	// Restore previous view target.
 	// If the previous view target is not valid anymore, we still set it on the camera manger. This will by
@@ -254,7 +254,7 @@ void FCameraCutGameHandler::SetCameraCut(
 
 	CA_SUPPRESS(6011);
 	const APlayerController* PC = GetPlaybackController(PlaybackContext);
-	APlayerCameraManager* CameraManager = (PC != nullptr) ? PC->PlayerCameraManager : nullptr;
+	APlayerCameraManager* CameraManager = (PC != nullptr) ? PC->PlayerCameraManager.Get() : nullptr;
 
 	// If the player controller is missing, there is no camera manager for us to manage the view target
 	// so, again, we bail out.
@@ -353,7 +353,7 @@ void FCameraCutGameHandler::SetCameraCut(
 		const float PlayRateFactor = Wrapper.CameraCutCapability ? Wrapper.CameraCutCapability->GetCameraBlendPlayRate() : 1.f;
 		const float BlendTime = CameraCutParams.BlendTime * (1 / FMath::Max(UE_SMALL_NUMBER, abs(PlayRateFactor)));
 
-		UE_LOG(LogMovieScene, Log, TEXT("Blending into new camera cut: '%s' -> '%s' (blend time: %f)"),
+		UE_LOG(LogMovieScene, Verbose, TEXT("Blending into new camera cut: '%s' -> '%s' (blend time: %f)"),
 			(ViewTarget ? *ViewTarget->GetName() : TEXT("None")),
 			(CameraActor ? *CameraActor->GetName() : TEXT("None")),
 			BlendTime);
@@ -373,13 +373,13 @@ void FCameraCutGameHandler::SetCameraCut(
 		const AActor* PendingViewTarget = CameraManager->PendingViewTarget.Target;
 		if (CameraActor != nullptr && PendingViewTarget == CameraActor)
 		{
-			UE_LOG(LogMovieScene, Log, TEXT("Camera transition aborted, we are already blending towards the intended camera"));
+			UE_LOG(LogMovieScene, Verbose, TEXT("Camera transition aborted, we are already blending towards the intended camera"));
 			bDoSetViewTarget = false;
 		}
 	}
 	else
 	{
-		UE_LOG(LogMovieScene, Log, TEXT("Starting new camera cut: '%s'"),
+		UE_LOG(LogMovieScene, Verbose, TEXT("Starting new camera cut: '%s'"),
 			(CameraActor ? *CameraActor->GetName() : TEXT("None")));
 	}
 	if (bDoSetViewTarget && ensureMsgf(CameraManager, TEXT("Can't set view target when there is no player controller!")))

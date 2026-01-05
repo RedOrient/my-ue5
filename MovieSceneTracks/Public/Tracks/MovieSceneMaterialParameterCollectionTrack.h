@@ -42,4 +42,11 @@ public:
 #if WITH_EDITORONLY_DATA
 	MOVIESCENETRACKS_API virtual FText GetDefaultDisplayName() const override;
 #endif
+
+protected:
+	//~ UObject interface
+#if WITH_EDITOR
+	MOVIESCENETRACKS_API virtual void PostLoad() override;
+#endif
+
 };
